@@ -1,0 +1,2327 @@
+<!DOCTYPE html>
+<html lang="es" class="dark h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <!-- Meta tags PWA para experiencia tipo app nativa en iOS y Android -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Mis Finanzas">
+    <meta name="theme-color" content="#09090b">
+    <link rel="manifest" href="data:application/manifest+json;charset=utf-8,%7B%22name%22%3A%22Mis%20Finanzas%22%2C%22short_name%22%3A%22Finanzas%22%2C%22start_url%22%3A%22.%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%2309090b%22%2C%22theme_color%22%3A%22%2309090b%22%2C%22orientation%22%3A%22portrait%22%7D">
+    <title>Mis Finanzas — Gastos, Tarjetas y Yape</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        ink: {
+                            950: '#09090b',
+                            900: '#111115',
+                            850: '#16161c',
+                            800: '#1c1c24',
+                            700: '#272732',
+                            600: '#353545'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif']
+                    }
+                }
+            }
+        };
+    </script>
+
+    <!-- Tipografía Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Íconos FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <style>
+        html, body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background-color: #09090b;
+            color: #f4f4f5;
+            -webkit-tap-highlight-color: transparent;
+            overscroll-behavior-y: none;
+        }
+        .tabular-nums {
+            font-variant-numeric: tabular-nums;
+        }
+        .glass-card {
+            background: rgba(24, 24, 32, 0.78);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+        }
+        .pb-safe {
+            padding-bottom: max(0.65rem, env(safe-area-inset-bottom));
+        }
+        ::-webkit-scrollbar {
+            width: 4px;
+            height: 4px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #272732;
+            border-radius: 9999px;
+        }
+        @keyframes fadeSlideUp {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-view {
+            animation: fadeSlideUp 0.2s ease-out forwards;
+        }
+    </style>
+</head>
+<body class="min-h-full bg-ink-950 text-zinc-100 antialiased selection:bg-indigo-500/30">
+
+    <!-- Contenedor principal mobile-first -->
+    <div class="w-full max-w-md mx-auto min-h-screen flex flex-col relative bg-ink-950 sm:border-x sm:border-white/[0.06] sm:shadow-2xl">
+
+        <!-- ========================================== -->
+        <!-- HEADER SUPERIOR COMPACTO                   -->
+        <!-- ========================================== -->
+        <header class="sticky top-0 z-30 bg-ink-950/90 backdrop-blur-xl border-b border-white/[0.06] px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center space-x-2.5 min-w-0">
+                <div class="w-9 h-9 rounded-2xl bg-gradient-to-br from-indigo-500/90 via-violet-500/85 to-emerald-400/90 flex items-center justify-center text-ink-950 shadow-lg shadow-indigo-500/15 shrink-0">
+                    <i class="fa-solid fa-wallet text-sm"></i>
+                </div>
+                <div class="min-w-0">
+                    <h1 class="text-[15px] font-bold tracking-tight text-white leading-tight truncate">Mis Finanzas</h1>
+                    <div class="flex items-center space-x-1.5 mt-0.5">
+                        <span id="syncDot" class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+                        <span id="syncLabel" class="text-[10px] font-medium text-zinc-400 truncate">Iniciando...</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex items-center space-x-2 shrink-0">
+                <button onclick="openModal('installModal')" class="px-2.5 py-2 rounded-xl bg-ink-800 hover:bg-ink-700 border border-white/[0.07] text-[11px] font-medium text-zinc-200 hover:text-white transition flex items-center space-x-1.5 active:scale-95">
+                    <i class="fa-solid fa-mobile-screen-button text-indigo-400 text-xs"></i>
+                    <span>Instalar App</span>
+                </button>
+                <button onclick="openSettingsModal()" class="w-9 h-9 rounded-xl bg-ink-800 hover:bg-ink-700 border border-white/[0.07] text-zinc-300 hover:text-white flex items-center justify-center transition active:scale-95" aria-label="Configuración" title="Configuración">
+                    <i class="fa-solid fa-gear text-sm"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- ========================================== -->
+        <!-- CONTENIDO PRINCIPAL                        -->
+        <!-- ========================================== -->
+        <main class="flex-1 px-4 pt-4 pb-28 space-y-4 overflow-x-hidden">
+
+            <!-- ========================================== -->
+            <!-- PESTAÑA 1: INICIO                          -->
+            <!-- ========================================== -->
+            <section id="view-inicio" class="space-y-4 animate-view">
+
+                <!-- 1. TARJETA PRÓXIMO SUELDO (Limpia y directa) -->
+                <div class="glass-card rounded-2xl p-4 flex items-center justify-between relative overflow-hidden">
+                    <div class="absolute -right-8 -top-8 w-28 h-28 bg-indigo-500/10 rounded-full blur-2xl pointer-events-none"></div>
+                    <div class="flex items-center space-x-3 relative z-10">
+                        <div class="w-10 h-10 rounded-xl bg-indigo-500/15 text-indigo-400 flex items-center justify-center shrink-0">
+                            <i class="fa-regular fa-calendar-check text-base"></i>
+                        </div>
+                        <div>
+                            <p class="text-[11px] font-medium text-zinc-400">Próximo Sueldo</p>
+                            <h2 id="paydayDateText" class="text-base font-bold text-white leading-snug">--</h2>
+                        </div>
+                    </div>
+                    <div class="text-right shrink-0 relative z-10">
+                        <span id="paydayStatusText" class="inline-flex items-center px-2.5 py-1.5 rounded-xl bg-indigo-500/15 border border-indigo-500/20 text-xs font-bold text-indigo-300 tabular-nums">
+                            --
+                        </span>
+                    </div>
+                </div>
+
+                <!-- 2. DOS TARJETAS PRINCIPALES: GASTADO EN YAPE & GASTADO EN TARJETAS -->
+                <div class="grid grid-cols-2 gap-3">
+                    <!-- Gastado en Yape -->
+                    <button onclick="goToExpensesFiltered('YAPE')" class="glass-card rounded-2xl p-4 text-left relative overflow-hidden hover:border-violet-500/30 transition active:scale-[0.98]">
+                        <div class="absolute -right-5 -bottom-5 w-16 h-16 bg-violet-500/15 rounded-full blur-xl pointer-events-none"></div>
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="w-7 h-7 rounded-lg bg-violet-500/15 text-violet-400 flex items-center justify-center text-xs">
+                                <i class="fa-solid fa-mobile-screen"></i>
+                            </span>
+                            <i class="fa-solid fa-arrow-right text-[10px] text-zinc-600"></i>
+                        </div>
+                        <p class="text-[11px] font-medium text-zinc-400">Gastado en Yape</p>
+                        <p id="homeYapeSpent" class="text-lg font-extrabold text-white tabular-nums mt-0.5 leading-tight">S/ 0.00</p>
+                        <p class="text-[10px] text-violet-300/80 mt-1 truncate">General + Pasajes</p>
+                    </button>
+
+                    <!-- Gastado en Tarjetas -->
+                    <button onclick="goToExpensesFiltered('CARDS')" class="glass-card rounded-2xl p-4 text-left relative overflow-hidden hover:border-emerald-500/30 transition active:scale-[0.98]">
+                        <div class="absolute -right-5 -bottom-5 w-16 h-16 bg-emerald-500/15 rounded-full blur-xl pointer-events-none"></div>
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="w-7 h-7 rounded-lg bg-emerald-500/15 text-emerald-400 flex items-center justify-center text-xs">
+                                <i class="fa-solid fa-credit-card"></i>
+                            </span>
+                            <i class="fa-solid fa-arrow-right text-[10px] text-zinc-600"></i>
+                        </div>
+                        <p class="text-[11px] font-medium text-zinc-400">Gastado en Tarjetas</p>
+                        <p id="homeCardsSpent" class="text-lg font-extrabold text-white tabular-nums mt-0.5 leading-tight">S/ 0.00</p>
+                        <p id="homeCardsSub" class="text-[10px] text-emerald-300/80 mt-1 truncate">Sin consumos aún</p>
+                    </button>
+                </div>
+
+                <!-- 3. LÍMITES DE YAPE -->
+                <div class="glass-card rounded-2xl p-4 space-y-3.5">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 class="text-sm font-bold text-white leading-tight">Límites de Yape</h3>
+                            <p id="cycleLabelHome" class="text-[10px] text-zinc-400 mt-0.5">Ciclo actual</p>
+                        </div>
+                        <button onclick="promptResetCycle()" class="text-[11px] font-medium text-zinc-400 hover:text-indigo-300 px-2.5 py-1 rounded-lg bg-ink-900/80 border border-white/[0.06] transition active:scale-95 flex items-center space-x-1" title="Reiniciar ciclo mensual">
+                            <i class="fa-solid fa-rotate-left text-[10px]"></i>
+                            <span>Reiniciar ciclo</span>
+                        </button>
+                    </div>
+
+                    <!-- Yape General -->
+                    <div class="bg-ink-900/80 border border-white/[0.05] rounded-xl p-3 space-y-2">
+                        <div class="flex items-center justify-between gap-2">
+                            <div class="flex items-center space-x-2 min-w-0">
+                                <span class="w-2 h-2 rounded-full bg-violet-400 shrink-0"></span>
+                                <span class="text-xs font-semibold text-zinc-200 truncate">Yape General</span>
+                            </div>
+                            <button onclick="openYapeLimitModal('yapeGen')" class="px-2 py-1 rounded-lg bg-ink-800 hover:bg-ink-700 text-violet-300 text-[11px] font-medium flex items-center space-x-1 border border-white/[0.06] transition active:scale-95 shrink-0">
+                                <i class="fa-solid fa-pen text-[9px]"></i>
+                                <span>Editar</span>
+                            </button>
+                        </div>
+                        <div class="w-full h-2.5 bg-ink-800 rounded-full overflow-hidden">
+                            <div id="yapeGenBar" class="h-full rounded-full bg-violet-500 transition-all duration-500" style="width: 0%"></div>
+                        </div>
+                        <div class="flex items-center justify-between text-[11px] tabular-nums">
+                            <span id="yapeGenSpentText" class="font-semibold text-white">S/ 0.00 <span class="text-zinc-400 font-normal">/ S/ 500.00</span></span>
+                            <span id="yapeGenLeftText" class="text-emerald-400 font-medium">Quedan S/ 500.00</span>
+                        </div>
+                    </div>
+
+                    <!-- Yape Pasajes -->
+                    <div class="bg-ink-900/80 border border-white/[0.05] rounded-xl p-3 space-y-2">
+                        <div class="flex items-center justify-between gap-2">
+                            <div class="flex items-center space-x-2 min-w-0">
+                                <span class="w-2 h-2 rounded-full bg-sky-400 shrink-0"></span>
+                                <span class="text-xs font-semibold text-zinc-200 truncate">Yape Pasajes</span>
+                            </div>
+                            <button onclick="openYapeLimitModal('yapePas')" class="px-2 py-1 rounded-lg bg-ink-800 hover:bg-ink-700 text-sky-300 text-[11px] font-medium flex items-center space-x-1 border border-white/[0.06] transition active:scale-95 shrink-0">
+                                <i class="fa-solid fa-pen text-[9px]"></i>
+                                <span>Editar</span>
+                            </button>
+                        </div>
+                        <div class="w-full h-2.5 bg-ink-800 rounded-full overflow-hidden">
+                            <div id="yapePasBar" class="h-full rounded-full bg-sky-400 transition-all duration-500" style="width: 0%"></div>
+                        </div>
+                        <div class="flex items-center justify-between text-[11px] tabular-nums">
+                            <span id="yapePasSpentText" class="font-semibold text-white">S/ 0.00 <span class="text-zinc-400 font-normal">/ S/ 160.00</span></span>
+                            <span id="yapePasLeftText" class="text-emerald-400 font-medium">Quedan S/ 160.00</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 4. TARJETA ESTRELLA DINÁMICA + MINI LISTA DE OTRAS TARJETAS -->
+                <div class="space-y-2.5">
+                    <div id="starCardContainer" class="rounded-2xl p-4 relative overflow-hidden border transition-all duration-300 bg-ink-850 border-emerald-500/30">
+                        <div id="starCardGlow" class="absolute -right-10 -top-10 w-36 h-36 bg-emerald-500/15 rounded-full blur-3xl pointer-events-none transition-all duration-300"></div>
+
+                        <div class="flex items-center justify-between mb-3 relative z-10">
+                            <span id="starCardBadge" class="inline-flex items-center space-x-1.5 text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/25">
+                                <i class="fa-solid fa-star text-[9px]"></i>
+                                <span>Tarjeta Estrella</span>
+                            </span>
+
+                            <div class="relative">
+                                <select id="starCardSelect" onchange="changeStarCard(this.value)" aria-label="Cambiar Tarjeta Estrella" class="appearance-none bg-ink-950/90 border border-white/10 text-xs font-semibold text-zinc-200 rounded-xl pl-3 pr-7 py-1.5 focus:outline-none focus:border-indigo-400 cursor-pointer">
+                                    <option value="SIP">SIP</option>
+                                    <option value="CMR">CMR</option>
+                                    <option value="INTERBANK">Interbank</option>
+                                    <option value="BCP">BCP</option>
+                                    <option value="IO">IO</option>
+                                </select>
+                                <i class="fa-solid fa-chevron-down text-[9px] text-zinc-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none"></i>
+                            </div>
+                        </div>
+
+                        <div class="flex items-end justify-between gap-2 relative z-10">
+                            <div class="min-w-0">
+                                <h3 id="starCardName" class="text-lg font-extrabold text-white tracking-tight">Tarjeta SIP</h3>
+                                <p id="starCardMeta" class="text-[11px] text-zinc-300 mt-0.5 truncate">Cierre 29 • Pago 25</p>
+                            </div>
+                            <div class="text-right shrink-0">
+                                <span class="text-[10px] uppercase tracking-wider text-zinc-400 block">Deuda actual</span>
+                                <span id="starCardDebt" class="text-xl font-extrabold text-emerald-400 tabular-nums">S/ 0.00</span>
+                            </div>
+                        </div>
+
+                        <div class="mt-3 pt-3 border-t border-white/[0.08] flex items-center justify-between text-xs relative z-10">
+                            <span class="text-zinc-300">Consumo ciclo: <strong id="starCardCycleSpend" class="text-white tabular-nums">S/ 0.00</strong></span>
+                            <div class="flex items-center space-x-2">
+                                <button id="starSipCalcBtn" onclick="openSipCalcModal()" class="text-[11px] font-semibold text-emerald-300 hover:text-emerald-200 bg-emerald-500/10 px-2.5 py-1 rounded-lg border border-emerald-500/20 transition active:scale-95">
+                                    <i class="fa-solid fa-calculator mr-1"></i>Cuotas
+                                </button>
+                                <button onclick="openCardPayModal(appData.starCard)" class="text-[11px] font-semibold text-white bg-ink-900/90 hover:bg-ink-900 px-2.5 py-1 rounded-lg border border-white/10 transition active:scale-95">
+                                    Abonar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Mini-lista limpia del gasto del ciclo en las OTRAS tarjetas -->
+                    <div class="glass-card rounded-2xl p-3.5 space-y-2.5">
+                        <div class="flex items-center justify-between">
+                            <span class="text-[11px] font-semibold text-zinc-300 flex items-center space-x-1.5">
+                                <i class="fa-solid fa-layer-group text-indigo-400 text-[10px]"></i>
+                                <span>Gasto del ciclo en otras tarjetas</span>
+                            </span>
+                            <button onclick="switchTab('tarjetas')" class="text-[11px] text-indigo-400 hover:text-indigo-300 font-medium">Ver tarjetas</button>
+                        </div>
+                        <div id="otherCardsGrid" class="grid grid-cols-2 gap-2">
+                            <!-- Renderizado dinámico -->
+                        </div>
+                    </div>
+                </div>
+
+            </section>
+
+            <!-- ========================================== -->
+            <!-- PESTAÑA 2: TARJETAS                        -->
+            <!-- ========================================== -->
+            <section id="view-tarjetas" class="hidden space-y-4 animate-view">
+                <!-- Resumen general de bajada de deuda -->
+                <div class="glass-card rounded-2xl p-4 space-y-3">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-[11px] font-medium text-zinc-400">Deuda Total en Tarjetas</p>
+                            <h2 id="cardsTotalDebt" class="text-2xl font-extrabold text-white tabular-nums mt-0.5">S/ 0.00</h2>
+                        </div>
+                        <div class="text-right">
+                            <span id="cardsReducedBadge" class="inline-block text-[11px] font-bold px-2.5 py-1 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/25 tabular-nums">0% bajado</span>
+                            <p id="cardsInitialRefText" class="text-[10px] text-zinc-400 mt-1 tabular-nums">Base: S/ 0.00</p>
+                        </div>
+                    </div>
+                    <div class="w-full h-2 bg-ink-900 rounded-full overflow-hidden">
+                        <div id="cardsGlobalProgressBar" class="h-full bg-gradient-to-r from-indigo-500 to-emerald-400 rounded-full transition-all duration-500" style="width: 0%"></div>
+                    </div>
+                </div>
+
+                <!-- Lista de las 5 tarjetas -->
+                <div id="cardsList" class="space-y-3">
+                    <!-- Renderizado dinámico -->
+                </div>
+
+                <!-- Simulador de Cuotas SIP integrado -->
+                <div class="glass-card rounded-2xl p-4 border border-emerald-500/20 space-y-3">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center space-x-2">
+                            <span class="w-8 h-8 rounded-xl bg-emerald-500/15 text-emerald-400 flex items-center justify-center text-xs">
+                                <i class="fa-solid fa-calculator"></i>
+                            </span>
+                            <div>
+                                <h3 class="text-sm font-bold text-white leading-tight">Simulador de Cuotas SIP</h3>
+                                <p class="text-[10px] text-zinc-400">Estima cuánto pagarías al pasar un gasto a cuotas</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-3 gap-2">
+                        <div>
+                            <label class="block text-[10px] font-medium text-zinc-400 mb-1">Monto (S/)</label>
+                            <input type="number" step="1" min="0" id="inlineSipAmount" value="400" oninput="runInlineSipCalc()" class="w-full bg-ink-950 border border-white/10 rounded-xl px-2.5 py-2 text-xs font-bold text-white tabular-nums focus:outline-none focus:border-emerald-400">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-medium text-zinc-400 mb-1">Cuotas</label>
+                            <select id="inlineSipCuotas" onchange="runInlineSipCalc()" class="w-full bg-ink-950 border border-white/10 rounded-xl px-2 py-2 text-xs font-semibold text-white focus:outline-none focus:border-emerald-400">
+                                <option value="2">2 meses</option>
+                                <option value="3" selected>3 meses</option>
+                                <option value="6">6 meses</option>
+                                <option value="12">12 meses</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-medium text-zinc-400 mb-1">Tasa %/mes</label>
+                            <input type="number" step="0.1" min="0" id="inlineSipRate" value="2.5" oninput="runInlineSipCalc()" class="w-full bg-ink-950 border border-white/10 rounded-xl px-2.5 py-2 text-xs font-bold text-white tabular-nums focus:outline-none focus:border-emerald-400">
+                        </div>
+                    </div>
+
+                    <div class="bg-ink-950/90 border border-white/[0.06] rounded-xl p-3 grid grid-cols-3 gap-2 text-center tabular-nums">
+                        <div>
+                            <span class="text-[10px] text-zinc-400 block">Cuota/mes</span>
+                            <strong id="inlineSipMonthly" class="text-xs font-extrabold text-emerald-400">S/ 143.33</strong>
+                        </div>
+                        <div class="border-x border-white/[0.06]">
+                            <span class="text-[10px] text-zinc-400 block">Interés est.</span>
+                            <strong id="inlineSipExtra" class="text-xs font-bold text-amber-400">+S/ 30.00</strong>
+                        </div>
+                        <div>
+                            <span class="text-[10px] text-zinc-400 block">Total</span>
+                            <strong id="inlineSipTotal" class="text-xs font-bold text-white">S/ 430.00</strong>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ========================================== -->
+            <!-- PESTAÑA 3: GASTOS                          -->
+            <!-- ========================================== -->
+            <section id="view-gastos" class="hidden space-y-4 animate-view">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h2 class="text-lg font-bold text-white">Gastos</h2>
+                        <p id="expensesCycleSummary" class="text-xs text-zinc-400 tabular-nums">Ciclo actual: S/ 0.00</p>
+                    </div>
+                    <button onclick="openExpenseModal()" class="px-3.5 py-2 rounded-xl bg-indigo-500 hover:bg-indigo-400 text-white text-xs font-semibold shadow-lg shadow-indigo-500/20 transition active:scale-95 flex items-center space-x-1.5">
+                        <i class="fa-solid fa-plus"></i>
+                        <span>Nuevo Gasto</span>
+                    </button>
+                </div>
+
+                <!-- Filtros por método de pago -->
+                <div class="flex items-center space-x-2 overflow-x-auto pb-1">
+                    <button onclick="setExpenseFilter('ALL')" id="filter-ALL" class="exp-filter-btn px-3 py-1.5 rounded-xl text-xs font-semibold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 shrink-0 transition">Todos</button>
+                    <button onclick="setExpenseFilter('YAPE')" id="filter-YAPE" class="exp-filter-btn px-3 py-1.5 rounded-xl text-xs font-medium bg-ink-800 text-zinc-400 border border-white/[0.06] shrink-0 transition">Yape</button>
+                    <button onclick="setExpenseFilter('CARDS')" id="filter-CARDS" class="exp-filter-btn px-3 py-1.5 rounded-xl text-xs font-medium bg-ink-800 text-zinc-400 border border-white/[0.06] shrink-0 transition">Tarjetas</button>
+                    <button onclick="setExpenseFilter('SIP')" id="filter-SIP" class="exp-filter-btn px-3 py-1.5 rounded-xl text-xs font-medium bg-ink-800 text-zinc-400 border border-white/[0.06] shrink-0 transition">SIP</button>
+                    <button onclick="setExpenseFilter('EFECTIVO')" id="filter-EFECTIVO" class="exp-filter-btn px-3 py-1.5 rounded-xl text-xs font-medium bg-ink-800 text-zinc-400 border border-white/[0.06] shrink-0 transition">Efectivo</button>
+                </div>
+
+                <!-- Historial de gastos -->
+                <div id="expensesList" class="space-y-2.5">
+                    <!-- Renderizado dinámico -->
+                </div>
+            </section>
+
+            <!-- ========================================== -->
+            <!-- PESTAÑA 4: POR COBRAR                      -->
+            <!-- ========================================== -->
+            <section id="view-cobrar" class="hidden space-y-4 animate-view">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h2 class="text-lg font-bold text-white">Por Cobrar</h2>
+                        <p id="splitsSummaryText" class="text-xs text-zinc-400 tabular-nums">Pendiente: S/ 0.00</p>
+                    </div>
+                    <button onclick="openSplitModal()" class="px-3.5 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-ink-950 text-xs font-bold shadow-lg shadow-emerald-500/20 transition active:scale-95 flex items-center space-x-1.5">
+                        <i class="fa-solid fa-plus"></i>
+                        <span>Nuevo</span>
+                    </button>
+                </div>
+
+                <!-- Lista de cobros compartidos -->
+                <div id="splitsList" class="space-y-3">
+                    <!-- Renderizado dinámico -->
+                </div>
+            </section>
+
+        </main>
+
+        <!-- ========================================== -->
+        <!-- BARRA DE NAVEGACIÓN INFERIOR FIJA          -->
+        <!-- ========================================== -->
+        <nav class="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md z-30 bg-ink-950/95 backdrop-blur-xl border-t border-white/[0.07] px-2 pt-2 pb-safe">
+            <div class="grid grid-cols-5 items-center">
+                <button onclick="switchTab('inicio')" id="nav-inicio" class="nav-btn flex flex-col items-center justify-center py-1.5 text-indigo-400 transition">
+                    <i class="fa-solid fa-house text-base"></i>
+                    <span class="text-[10px] font-semibold mt-1">Inicio</span>
+                </button>
+                <button onclick="switchTab('tarjetas')" id="nav-tarjetas" class="nav-btn flex flex-col items-center justify-center py-1.5 text-zinc-400 hover:text-zinc-200 transition">
+                    <i class="fa-solid fa-credit-card text-base"></i>
+                    <span class="text-[10px] font-medium mt-1">Tarjetas</span>
+                </button>
+
+                <!-- Botón destacado central + Nuevo Gasto -->
+                <div class="flex justify-center -mt-6">
+                    <button onclick="openExpenseModal()" class="w-[52px] h-[52px] rounded-2xl bg-gradient-to-tr from-indigo-500 via-violet-500 to-emerald-400 text-ink-950 shadow-lg shadow-indigo-500/25 flex items-center justify-center text-xl active:scale-90 transition border-4 border-ink-950" aria-label="Nuevo Gasto" title="Nuevo Gasto">
+                        <i class="fa-solid fa-plus"></i>
+                    </button>
+                </div>
+
+                <button onclick="switchTab('gastos')" id="nav-gastos" class="nav-btn flex flex-col items-center justify-center py-1.5 text-zinc-400 hover:text-zinc-200 transition">
+                    <i class="fa-solid fa-receipt text-base"></i>
+                    <span class="text-[10px] font-medium mt-1">Gastos</span>
+                </button>
+                <button onclick="switchTab('cobrar')" id="nav-cobrar" class="nav-btn flex flex-col items-center justify-center py-1.5 text-zinc-400 hover:text-zinc-200 transition">
+                    <i class="fa-solid fa-hand-holding-dollar text-base"></i>
+                    <span class="text-[10px] font-medium mt-1">Por Cobrar</span>
+                </button>
+            </div>
+        </nav>
+
+    </div>
+
+    <!-- TOAST DE NOTIFICACIONES -->
+    <div id="toast" class="fixed top-16 left-1/2 -translate-x-1/2 z-50 hidden px-4 py-2.5 rounded-xl bg-ink-800 border border-white/10 text-xs font-semibold text-white shadow-2xl flex items-center space-x-2 max-w-[90vw]">
+        <i id="toastIcon" class="fa-solid fa-circle-check text-emerald-400"></i>
+        <span id="toastMsg">Guardado</span>
+    </div>
+
+    <!-- ================================================== -->
+    <!-- MODALES                                            -->
+    <!-- ================================================== -->
+
+    <!-- MODAL 1: AGREGAR / EDITAR GASTO -->
+    <div id="expenseModal" class="fixed inset-0 z-50 hidden bg-black/75 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4">
+        <div class="w-full max-w-md bg-ink-900 border border-white/10 rounded-t-3xl sm:rounded-2xl p-5 max-h-[92vh] overflow-y-auto animate-view">
+            <div class="flex items-center justify-between pb-3 border-b border-white/[0.06]">
+                <h3 id="expenseModalTitle" class="text-base font-bold text-white flex items-center space-x-2">
+                    <i class="fa-solid fa-circle-plus text-indigo-400"></i>
+                    <span>Nuevo Gasto</span>
+                </h3>
+                <button onclick="closeModal('expenseModal')" class="w-8 h-8 rounded-lg bg-ink-800 text-zinc-400 hover:text-white flex items-center justify-center">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <form id="expenseForm" onsubmit="handleExpenseSubmit(event)" class="space-y-3.5 mt-4">
+                <input type="hidden" id="expEditId">
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-medium text-zinc-300 mb-1">Monto (S/)</label>
+                        <input type="number" step="0.01" min="0.01" id="expAmount" required placeholder="0.00" oninput="updateExpenseSipEstimate()" class="w-full bg-ink-950 border border-white/10 rounded-xl px-3.5 py-2.5 text-base font-bold text-white tabular-nums focus:outline-none focus:border-indigo-400">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-zinc-300 mb-1">Fecha</label>
+                        <input type="date" id="expDate" required class="w-full bg-ink-950 border border-white/10 rounded-xl px-3 py-2.5 text-xs font-medium text-white focus:outline-none focus:border-indigo-400">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-zinc-300 mb-1">Descripción</label>
+                    <input type="text" id="expDesc" required placeholder="Ej. Almuerzo, Pasaje, Cuerdas, Café..." class="w-full bg-ink-950 border border-white/10 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-indigo-400">
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-medium text-zinc-300 mb-1">Categoría</label>
+                        <select id="expCategory" class="w-full bg-ink-950 border border-white/10 rounded-xl px-3 py-2.5 text-xs font-medium text-white focus:outline-none focus:border-indigo-400">
+                            <option value="Comida">Comida</option>
+                            <option value="Pasajes">Pasajes</option>
+                            <option value="Salidas">Salidas</option>
+                            <option value="Música/Equipos">Música/Equipos</option>
+                            <option value="Servicios">Servicios</option>
+                            <option value="Otros">Otros</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-zinc-300 mb-1">Método de Pago</label>
+                        <select id="expMethod" onchange="toggleSipInstallmentsBox()" class="w-full bg-ink-950 border border-white/10 rounded-xl px-3 py-2.5 text-xs font-medium text-white focus:outline-none focus:border-indigo-400">
+                            <option value="YAPE_GEN">Yape General</option>
+                            <option value="YAPE_PAS">Yape Pasajes</option>
+                            <option value="SIP">SIP</option>
+                            <option value="CMR">CMR</option>
+                            <option value="INTERBANK">Interbank</option>
+                            <option value="BCP">BCP</option>
+                            <option value="IO">IO</option>
+                            <option value="EFECTIVO">Efectivo</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Opción de cuotas cuando el método es SIP -->
+                <div id="sipInstallmentBox" class="hidden bg-emerald-500/[0.06] border border-emerald-500/25 rounded-xl p-3 space-y-2.5">
+                    <label class="flex items-center justify-between cursor-pointer">
+                        <span class="text-xs font-semibold text-emerald-400 flex items-center space-x-1.5">
+                            <i class="fa-solid fa-percent text-[11px]"></i>
+                            <span>¿Pasar este gasto a cuotas SIP?</span>
+                        </span>
+                        <input type="checkbox" id="expIsInstallment" onchange="toggleSipCountRow()" class="w-4 h-4 accent-emerald-500 rounded">
+                    </label>
+                    <div id="sipCountRow" class="hidden space-y-2 pt-1">
+                        <div class="flex items-center justify-between gap-2">
+                            <span class="text-[11px] text-zinc-300">Número de cuotas:</span>
+                            <select id="expInstallments" onchange="updateExpenseSipEstimate()" class="bg-ink-950 border border-white/10 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-emerald-400">
+                                <option value="2">2 cuotas</option>
+                                <option value="3" selected>3 cuotas</option>
+                                <option value="6">6 cuotas</option>
+                                <option value="12">12 cuotas</option>
+                            </select>
+                        </div>
+                        <p id="expSipPreview" class="text-[11px] text-zinc-300 bg-ink-950/80 rounded-lg px-2.5 py-2 tabular-nums">
+                            Est. cuota: S/ 0.00/mes
+                        </p>
+                    </div>
+                </div>
+
+                <button type="submit" id="expSubmitBtn" class="w-full py-3 rounded-xl bg-indigo-500 hover:bg-indigo-400 text-white font-bold text-sm shadow-lg shadow-indigo-500/20 transition active:scale-[0.98]">
+                    Guardar Gasto
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 2: EDITAR LÍMITE YAPE DIRECTO -->
+    <div id="yapeLimitModal" class="fixed inset-0 z-50 hidden bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="w-full max-w-sm bg-ink-900 border border-white/10 rounded-2xl p-5 animate-view">
+            <div class="flex items-center justify-between pb-3 border-b border-white/[0.06]">
+                <h3 id="yapeModalTitle" class="text-base font-bold text-white">Editar Límite Yape</h3>
+                <button onclick="closeModal('yapeLimitModal')" class="w-8 h-8 rounded-lg bg-ink-800 text-zinc-400 hover:text-white flex items-center justify-center">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <form onsubmit="handleYapeLimitSubmit(event)" class="space-y-4 mt-4">
+                <input type="hidden" id="yapeEditKey">
+                <div>
+                    <label id="yapeEditLabel" class="block text-xs font-medium text-zinc-300 mb-1.5">Nuevo límite (S/)</label>
+                    <input type="number" step="1" min="1" id="yapeEditValue" required class="w-full bg-ink-950 border border-white/10 rounded-xl px-4 py-3 text-lg font-bold text-white tabular-nums focus:outline-none focus:border-violet-400">
+                </div>
+                <div class="flex space-x-2">
+                    <button type="button" onclick="closeModal('yapeLimitModal')" class="flex-1 py-2.5 rounded-xl bg-ink-800 text-zinc-300 text-xs font-semibold">Cancelar</button>
+                    <button type="submit" class="flex-1 py-2.5 rounded-xl bg-indigo-500 hover:bg-indigo-400 text-white text-xs font-bold transition">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 3: ABONAR / PAGAR TARJETA -->
+    <div id="cardPayModal" class="fixed inset-0 z-50 hidden bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="w-full max-w-sm bg-ink-900 border border-white/10 rounded-2xl p-5 animate-view">
+            <div class="flex items-center justify-between pb-3 border-b border-white/[0.06]">
+                <h3 id="cardPayTitle" class="text-base font-bold text-white">Abonar a Tarjeta</h3>
+                <button onclick="closeModal('cardPayModal')" class="w-8 h-8 rounded-lg bg-ink-800 text-zinc-400 hover:text-white flex items-center justify-center">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <form onsubmit="handleCardPaySubmit(event)" class="space-y-4 mt-4">
+                <input type="hidden" id="payCardKey">
+                <div class="bg-ink-950/90 rounded-xl p-3 flex items-center justify-between text-xs border border-white/[0.06]">
+                    <span class="text-zinc-400">Deuda actual:</span>
+                    <strong id="payCardCurrentDebt" class="text-rose-400 tabular-nums text-sm">S/ 0.00</strong>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-zinc-300 mb-1.5">Monto del pago / abono (S/)</label>
+                    <input type="number" step="0.01" min="0.01" id="payCardAmount" required placeholder="0.00" class="w-full bg-ink-950 border border-white/10 rounded-xl px-4 py-3 text-lg font-bold text-emerald-400 tabular-nums focus:outline-none focus:border-emerald-400">
+                </div>
+                <button type="submit" class="w-full py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-ink-950 font-bold text-sm transition active:scale-[0.98]">
+                    Confirmar Pago
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 4: EDITAR TARJETA -->
+    <div id="cardEditModal" class="fixed inset-0 z-50 hidden bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="w-full max-w-sm bg-ink-900 border border-white/10 rounded-2xl p-5 animate-view">
+            <div class="flex items-center justify-between pb-3 border-b border-white/[0.06]">
+                <h3 id="cardEditTitle" class="text-base font-bold text-white">Editar Tarjeta</h3>
+                <button onclick="closeModal('cardEditModal')" class="w-8 h-8 rounded-lg bg-ink-800 text-zinc-400 hover:text-white flex items-center justify-center">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <form onsubmit="handleCardEditSubmit(event)" class="space-y-3.5 mt-4">
+                <input type="hidden" id="editCardKey">
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-medium text-zinc-300 mb-1">Deuda Actual (S/)</label>
+                        <input type="number" step="0.01" min="0" id="editCardDebt" required class="w-full bg-ink-950 border border-white/10 rounded-xl px-3 py-2.5 text-sm font-bold text-white tabular-nums focus:outline-none focus:border-indigo-400">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-zinc-300 mb-1">Deuda Base (S/)</label>
+                        <input type="number" step="0.01" min="0" id="editCardInitial" required class="w-full bg-ink-950 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white tabular-nums focus:outline-none focus:border-indigo-400">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-medium text-zinc-300 mb-1">Día de cierre</label>
+                        <input type="text" id="editCardClosing" placeholder="Ej. 29" class="w-full bg-ink-950 border border-white/10 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-400">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-zinc-300 mb-1">Día de pago</label>
+                        <input type="text" id="editCardPayment" placeholder="Ej. 25" class="w-full bg-ink-950 border border-white/10 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-400">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-zinc-300 mb-1">Notas</label>
+                    <input type="text" id="editCardNote" placeholder="Ej. Cuotas bajas / Solo pagando deuda" class="w-full bg-ink-950 border border-white/10 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-400">
+                </div>
+                <button type="submit" class="w-full py-3 rounded-xl bg-indigo-500 hover:bg-indigo-400 text-white font-bold text-sm transition">
+                    Guardar Cambios
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 5: SIMULADOR CUOTAS SIP (ACCESO RÁPIDO DESDE INICIO) -->
+    <div id="sipCalcModal" class="fixed inset-0 z-50 hidden bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="w-full max-w-sm bg-ink-900 border border-emerald-500/30 rounded-2xl p-5 animate-view space-y-4">
+            <div class="flex items-center justify-between pb-3 border-b border-white/[0.06]">
+                <h3 class="text-base font-bold text-white flex items-center space-x-2">
+                    <i class="fa-solid fa-calculator text-emerald-400"></i>
+                    <span>Simulador Cuotas SIP</span>
+                </h3>
+                <button onclick="closeModal('sipCalcModal')" class="w-8 h-8 rounded-lg bg-ink-800 text-zinc-400 hover:text-white flex items-center justify-center">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <div class="space-y-3">
+                <div>
+                    <label class="block text-xs font-medium text-zinc-300 mb-1">Monto a pasar a cuotas (S/)</label>
+                    <input type="number" step="1" min="0" id="calcSipAmount" value="400" oninput="runModalSipCalc()" class="w-full bg-ink-950 border border-white/10 rounded-xl px-3.5 py-2.5 text-base font-bold text-white tabular-nums focus:outline-none focus:border-emerald-400">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-medium text-zinc-300 mb-1">Cuotas</label>
+                        <select id="calcSipCuotas" onchange="runModalSipCalc()" class="w-full bg-ink-950 border border-white/10 rounded-xl px-3 py-2.5 text-xs text-white">
+                            <option value="2">2 cuotas</option>
+                            <option value="3" selected>3 cuotas</option>
+                            <option value="6">6 cuotas</option>
+                            <option value="12">12 cuotas</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-zinc-300 mb-1">Tasa mensual (%)</label>
+                        <input type="number" step="0.1" min="0" id="calcSipRate" value="2.5" oninput="runModalSipCalc()" class="w-full bg-ink-950 border border-white/10 rounded-xl px-3 py-2.5 text-xs text-white tabular-nums">
+                    </div>
+                </div>
+                <div class="bg-ink-950 border border-white/[0.06] rounded-xl p-3.5 space-y-2 tabular-nums">
+                    <div class="flex justify-between text-xs">
+                        <span class="text-zinc-400">Cuota mensual aprox:</span>
+                        <strong id="calcResMonthly" class="text-emerald-400 text-sm">S/ 143.33</strong>
+                    </div>
+                    <div class="flex justify-between text-xs">
+                        <span class="text-zinc-400">Interés total aprox:</span>
+                        <strong id="calcResExtra" class="text-amber-400">+ S/ 30.00</strong>
+                    </div>
+                    <div class="flex justify-between text-xs pt-1.5 border-t border-white/[0.06]">
+                        <span class="text-zinc-300 font-medium">Total a pagar:</span>
+                        <strong id="calcResTotal" class="text-white">S/ 430.00</strong>
+                    </div>
+                </div>
+            </div>
+            <button onclick="closeModal('sipCalcModal')" class="w-full py-2.5 rounded-xl bg-ink-800 hover:bg-ink-700 text-xs font-semibold text-white">Cerrar</button>
+        </div>
+    </div>
+
+    <!-- MODAL 6: NUEVO / EDITAR POR COBRAR -->
+    <div id="splitModal" class="fixed inset-0 z-50 hidden bg-black/75 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4">
+        <div class="w-full max-w-md bg-ink-900 border border-white/10 rounded-t-3xl sm:rounded-2xl p-5 max-h-[92vh] overflow-y-auto animate-view">
+            <div class="flex items-center justify-between pb-3 border-b border-white/[0.06]">
+                <h3 id="splitModalTitle" class="text-base font-bold text-white flex items-center space-x-2">
+                    <i class="fa-solid fa-hand-holding-dollar text-emerald-400"></i>
+                    <span>Nuevo Por Cobrar</span>
+                </h3>
+                <button onclick="closeModal('splitModal')" class="w-8 h-8 rounded-lg bg-ink-800 text-zinc-400 hover:text-white flex items-center justify-center">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <form id="splitForm" onsubmit="handleSplitSubmit(event)" class="space-y-3.5 mt-4">
+                <input type="hidden" id="splitEditId">
+
+                <div>
+                    <label class="block text-xs font-medium text-zinc-300 mb-1">Concepto</label>
+                    <input type="text" id="splitTitle" required placeholder="Ej. Cancha de fútbol, Comida con patas..." class="w-full bg-ink-950 border border-white/10 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-emerald-400">
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-medium text-zinc-300 mb-1">Total pagado (S/)</label>
+                        <input type="number" step="0.01" min="0.01" id="splitTotal" required placeholder="160.00" oninput="syncSplitTargetDefault()" class="w-full bg-ink-950 border border-white/10 rounded-xl px-3.5 py-2.5 text-sm font-bold text-white tabular-nums focus:outline-none focus:border-emerald-400">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-zinc-300 mb-1">Total a cobrar (S/)</label>
+                        <input type="number" step="0.01" min="0.01" id="splitTarget" required placeholder="144.00" class="w-full bg-ink-950 border border-white/10 rounded-xl px-3.5 py-2.5 text-sm font-bold text-emerald-400 tabular-nums focus:outline-none focus:border-emerald-400">
+                    </div>
+                </div>
+                <p class="text-[10px] text-zinc-400 -mt-1.5">Si también incluyes tu parte (ej. S/ 16 de S/ 160), ajusta "Total a cobrar" a S/ 144.</p>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-medium text-zinc-300 mb-1">Cuota por persona (S/)</label>
+                        <input type="number" step="0.01" min="0" id="splitShare" placeholder="Ej. 16.00" class="w-full bg-ink-950 border border-white/10 rounded-xl px-3.5 py-2.5 text-xs text-white tabular-nums focus:outline-none focus:border-emerald-400">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-zinc-300 mb-1">Fecha</label>
+                        <input type="date" id="splitDate" required class="w-full bg-ink-950 border border-white/10 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-400">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-zinc-300 mb-1">¿Con qué método pagaste?</label>
+                    <select id="splitMethod" class="w-full bg-ink-950 border border-white/10 rounded-xl px-3.5 py-2.5 text-xs font-medium text-white focus:outline-none focus:border-emerald-400">
+                        <option value="YAPE_GEN">Yape General</option>
+                        <option value="YAPE_PAS">Yape Pasajes</option>
+                        <option value="SIP">SIP</option>
+                        <option value="CMR">CMR</option>
+                        <option value="INTERBANK">Interbank</option>
+                        <option value="BCP">BCP</option>
+                        <option value="IO">IO</option>
+                        <option value="EFECTIVO">Efectivo</option>
+                    </select>
+                    <p class="text-[10px] text-zinc-400 mt-1">Se sumará automáticamente a tu tarjeta o barra de Yape para que no lo registres doble.</p>
+                </div>
+
+                <button type="submit" id="splitSubmitBtn" class="w-full py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-ink-950 font-bold text-sm shadow-lg shadow-emerald-500/20 transition active:scale-[0.98]">
+                    Guardar Por Cobrar
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 7: REGISTRAR ABONO DE AMIGO -->
+    <div id="repayModal" class="fixed inset-0 z-50 hidden bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="w-full max-w-sm bg-ink-900 border border-white/10 rounded-2xl p-5 animate-view">
+            <div class="flex items-center justify-between pb-3 border-b border-white/[0.06]">
+                <h3 id="repayModalTitle" class="text-base font-bold text-white">Registrar Cobro</h3>
+                <button onclick="closeModal('repayModal')" class="w-8 h-8 rounded-lg bg-ink-800 text-zinc-400 hover:text-white flex items-center justify-center">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <form onsubmit="handleRepaySubmit(event)" class="space-y-3.5 mt-4">
+                <input type="hidden" id="repaySplitId">
+                <div>
+                    <label class="block text-xs font-medium text-zinc-300 mb-1">Monto recibido (S/)</label>
+                    <input type="number" step="0.01" min="0.01" id="repayAmount" required placeholder="16.00" class="w-full bg-ink-950 border border-white/10 rounded-xl px-4 py-3 text-lg font-bold text-emerald-400 tabular-nums focus:outline-none focus:border-emerald-400">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-zinc-300 mb-1">¿Quién pagó? (opcional)</label>
+                    <input type="text" id="repayPerson" placeholder="Ej. Carlos, Diego, Pepe..." class="w-full bg-ink-950 border border-white/10 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-emerald-400">
+                </div>
+                <button type="submit" class="w-full py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-ink-950 font-bold text-sm transition active:scale-[0.98]">
+                    + Sumar Cobro
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 8: CONFIGURACIÓN, CICLO Y RESPALDO JSON -->
+    <div id="settingsModal" class="fixed inset-0 z-50 hidden bg-black/75 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4">
+        <div class="w-full max-w-md bg-ink-900 border border-white/10 rounded-t-3xl sm:rounded-2xl p-5 max-h-[90vh] overflow-y-auto animate-view space-y-5">
+            <div class="flex items-center justify-between pb-3 border-b border-white/[0.06]">
+                <h3 class="text-base font-bold text-white flex items-center space-x-2">
+                    <i class="fa-solid fa-sliders text-indigo-400"></i>
+                    <span>Configuración</span>
+                </h3>
+                <button onclick="closeModal('settingsModal')" class="w-8 h-8 rounded-lg bg-ink-800 text-zinc-400 hover:text-white flex items-center justify-center">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <!-- Estado de guardado -->
+            <div class="bg-ink-950/90 border border-white/[0.06] rounded-xl p-3 flex items-center justify-between">
+                <div class="flex items-center space-x-2.5">
+                    <i id="settingsSyncIcon" class="fa-solid fa-cloud text-indigo-400"></i>
+                    <div>
+                        <p class="text-xs font-semibold text-white">Guardado de Datos</p>
+                        <p id="settingsSyncDetail" class="text-[11px] text-zinc-400">Verificando...</p>
+                    </div>
+                </div>
+                <span id="settingsSyncPill" class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-ink-800 text-zinc-300">...</span>
+            </div>
+
+            <!-- Límites de Yape -->
+            <form onsubmit="handleAllLimitsSubmit(event)" class="space-y-3">
+                <h4 class="text-xs font-bold uppercase tracking-wider text-zinc-400">Límites de Yape</h4>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs text-zinc-300 mb-1">Yape General (S/)</label>
+                        <input type="number" step="1" min="1" id="setLimitGen" required class="w-full bg-ink-950 border border-white/10 rounded-xl px-3 py-2 text-sm font-bold text-white tabular-nums focus:outline-none focus:border-indigo-400">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-zinc-300 mb-1">Yape Pasajes (S/)</label>
+                        <input type="number" step="1" min="1" id="setLimitPas" required class="w-full bg-ink-950 border border-white/10 rounded-xl px-3 py-2 text-sm font-bold text-white tabular-nums focus:outline-none focus:border-indigo-400">
+                    </div>
+                </div>
+                <button type="submit" class="w-full py-2.5 rounded-xl bg-indigo-500 hover:bg-indigo-400 text-white text-xs font-bold transition">
+                    Guardar Límites
+                </button>
+            </form>
+
+            <!-- Ciclo Mensual -->
+            <div class="space-y-2.5 pt-2 border-t border-white/[0.06]">
+                <h4 class="text-xs font-bold uppercase tracking-wider text-zinc-400">Ciclo Mensual</h4>
+                <button onclick="closeModal('settingsModal'); promptResetCycle();" class="w-full py-2.5 px-3 rounded-xl bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/25 text-indigo-300 text-xs font-semibold flex items-center justify-center space-x-2 transition">
+                    <i class="fa-solid fa-rotate-left"></i>
+                    <span>Reiniciar ciclo mensual (S/ 0.00 en Yape y consumos)</span>
+                </button>
+                <p class="text-[10px] text-zinc-500">Pone en cero los contadores del ciclo actual sin borrar tus deudas de tarjetas ni tu historial.</p>
+            </div>
+
+            <!-- Respaldo JSON -->
+            <div class="space-y-2.5 pt-2 border-t border-white/[0.06]">
+                <h4 class="text-xs font-bold uppercase tracking-wider text-zinc-400">Respaldo JSON</h4>
+                <div class="grid grid-cols-2 gap-2.5">
+                    <button onclick="exportBackupJSON()" class="py-2.5 px-3 rounded-xl bg-ink-800 hover:bg-ink-700 border border-white/[0.07] text-xs font-semibold text-white flex items-center justify-center space-x-1.5 transition">
+                        <i class="fa-solid fa-download text-emerald-400"></i>
+                        <span>Exportar JSON</span>
+                    </button>
+                    <label class="py-2.5 px-3 rounded-xl bg-ink-800 hover:bg-ink-700 border border-white/[0.07] text-xs font-semibold text-white flex items-center justify-center space-x-1.5 cursor-pointer transition">
+                        <i class="fa-solid fa-upload text-sky-400"></i>
+                        <span>Importar JSON</span>
+                        <input type="file" accept=".json" onchange="importBackupJSON(event)" class="hidden">
+                    </label>
+                </div>
+                <button onclick="copyBackupJSON()" class="w-full py-2 rounded-xl bg-ink-950 hover:bg-ink-800 border border-white/[0.06] text-[11px] font-medium text-zinc-300 transition flex items-center justify-center space-x-1.5">
+                    <i class="fa-regular fa-copy text-zinc-400"></i>
+                    <span>Copiar respaldo al portapapeles</span>
+                </button>
+            </div>
+
+            <!-- Empezar en cero -->
+            <div class="pt-2 border-t border-white/[0.06]">
+                <button onclick="promptStartFromZero()" class="w-full py-2.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/25 text-rose-400 text-xs font-semibold transition">
+                    Empezar en cero (borrar ejemplos y gastos)
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 9: INSTALAR APP EN EL CELULAR -->
+    <div id="installModal" class="fixed inset-0 z-50 hidden bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="w-full max-w-sm bg-ink-900 border border-white/10 rounded-2xl p-5 animate-view space-y-4">
+            <div class="flex items-center justify-between pb-3 border-b border-white/[0.06]">
+                <h3 class="text-base font-bold text-white flex items-center space-x-2">
+                    <i class="fa-solid fa-mobile-screen-button text-indigo-400"></i>
+                    <span>Instalar en tu Celular</span>
+                </h3>
+                <button onclick="closeModal('installModal')" class="w-8 h-8 rounded-lg bg-ink-800 text-zinc-400 hover:text-white flex items-center justify-center">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <div class="space-y-3 text-xs text-zinc-300">
+                <div class="bg-ink-950 border border-white/[0.06] rounded-xl p-3 space-y-1.5">
+                    <p class="font-bold text-white flex items-center space-x-1.5">
+                        <i class="fa-brands fa-apple text-sm"></i>
+                        <span>iPhone / iPad (Safari)</span>
+                    </p>
+                    <ol class="list-decimal pl-4 space-y-1 text-zinc-300 leading-relaxed">
+                        <li>Abre tu enlace publicado en <strong>Safari</strong>.</li>
+                        <li>Toca el ícono <strong>Compartir</strong> <i class="fa-solid fa-arrow-up-from-bracket text-indigo-400 mx-0.5"></i> abajo.</li>
+                        <li>Elige <strong>"Agregar a pantalla de inicio"</strong> y pulsa Agregar.</li>
+                    </ol>
+                </div>
+
+                <div class="bg-ink-950 border border-white/[0.06] rounded-xl p-3 space-y-1.5">
+                    <p class="font-bold text-white flex items-center space-x-1.5">
+                        <i class="fa-brands fa-android text-emerald-400 text-sm"></i>
+                        <span>Android (Chrome)</span>
+                    </p>
+                    <ol class="list-decimal pl-4 space-y-1 text-zinc-300 leading-relaxed">
+                        <li>Abre tu enlace publicado en <strong>Chrome</strong>.</li>
+                        <li>Toca los <strong>3 puntitos</strong> arriba a la derecha.</li>
+                        <li>Toca <strong>"Añadir a la pantalla de inicio"</strong> o <strong>"Instalar app"</strong>.</li>
+                    </ol>
+                </div>
+
+                <p class="text-[11px] text-emerald-400/90 text-center">Se abrirá en pantalla completa, sin barras del navegador y sin ocupar espacio.</p>
+            </div>
+
+            <button onclick="closeModal('installModal')" class="w-full py-2.5 rounded-xl bg-indigo-500 hover:bg-indigo-400 text-white text-xs font-bold transition">
+                ¡Entendido!
+            </button>
+        </div>
+    </div>
+
+    <!-- MODAL 10: CONFIRMACIÓN PERSONALIZADA -->
+    <div id="confirmModal" class="fixed inset-0 z-[60] hidden bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="w-full max-w-xs bg-ink-900 border border-white/10 rounded-2xl p-5 animate-view space-y-4">
+            <div class="space-y-1.5">
+                <h3 id="confirmTitle" class="text-base font-bold text-white">¿Confirmar acción?</h3>
+                <p id="confirmMessage" class="text-xs text-zinc-300 leading-relaxed">Esta acción modificará tus datos.</p>
+            </div>
+            <div class="flex space-x-2.5">
+                <button onclick="closeConfirmModal()" class="flex-1 py-2.5 rounded-xl bg-ink-800 hover:bg-ink-700 text-zinc-300 text-xs font-semibold transition">Cancelar</button>
+                <button id="confirmActionBtn" class="flex-1 py-2.5 rounded-xl bg-rose-500 hover:bg-rose-400 text-white text-xs font-bold transition">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================================================== -->
+    <!-- LÓGICA PRINCIPAL DE LA APP                         -->
+    <!-- ================================================== -->
+    <script>
+        const MONTHS_ES = [
+            'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
+            'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'
+        ];
+        const MONTHS_SHORT_ES = [
+            'ene', 'feb', 'mar', 'abr', 'may', 'jun',
+            'jul', 'ago', 'sep', 'oct', 'nov', 'dic'
+        ];
+        const CARD_KEYS = ['SIP', 'CMR', 'INTERBANK', 'BCP', 'IO'];
+
+        const METHOD_LABELS = {
+            YAPE_GEN: 'Yape General',
+            YAPE_PAS: 'Yape Pasajes',
+            SIP: 'SIP',
+            CMR: 'CMR',
+            INTERBANK: 'Interbank',
+            BCP: 'BCP',
+            IO: 'IO',
+            EFECTIVO: 'Efectivo'
+        };
+
+        const CARD_THEMES = {
+            SIP: {
+                border: 'border-emerald-500/35',
+                glow: 'bg-emerald-500/15',
+                badge: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/25',
+                text: 'text-emerald-400',
+                bar: 'bg-emerald-400',
+                dot: 'bg-emerald-400'
+            },
+            CMR: {
+                border: 'border-lime-500/35',
+                glow: 'bg-lime-500/15',
+                badge: 'bg-lime-500/15 text-lime-400 border-lime-500/25',
+                text: 'text-lime-400',
+                bar: 'bg-lime-400',
+                dot: 'bg-lime-400'
+            },
+            INTERBANK: {
+                border: 'border-sky-500/35',
+                glow: 'bg-sky-500/15',
+                badge: 'bg-sky-500/15 text-sky-400 border-sky-500/25',
+                text: 'text-sky-400',
+                bar: 'bg-sky-400',
+                dot: 'bg-sky-400'
+            },
+            BCP: {
+                border: 'border-indigo-500/35',
+                glow: 'bg-indigo-500/15',
+                badge: 'bg-indigo-500/15 text-indigo-400 border-indigo-500/25',
+                text: 'text-indigo-400',
+                bar: 'bg-indigo-400',
+                dot: 'bg-indigo-400'
+            },
+            IO: {
+                border: 'border-violet-500/35',
+                glow: 'bg-violet-500/15',
+                badge: 'bg-violet-500/15 text-violet-400 border-violet-500/25',
+                text: 'text-violet-400',
+                bar: 'bg-violet-400',
+                dot: 'bg-violet-400'
+            }
+        };
+
+        function getTodayStr() {
+            const d = new Date();
+            return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        }
+
+        function getCurrentMonthPrefix() {
+            return getTodayStr().slice(0, 7);
+        }
+
+        function formatSoles(val) {
+            const n = Number(val) || 0;
+            return 'S/ ' + n.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+
+        function formatShortDate(isoDate) {
+            if (!isoDate || !isoDate.includes('-')) return '';
+            const parts = isoDate.split('-');
+            const day = parseInt(parts[2], 10);
+            const mIdx = parseInt(parts[1], 10) - 1;
+            return `${day} ${MONTHS_SHORT_ES[mIdx] || ''}`;
+        }
+
+        function escapeHTML(str) {
+            return String(str || '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        // --- Estado inicial con 2 gastos de ejemplo ligeros ---
+        function getDefaultData() {
+            const today = getTodayStr();
+            return {
+                starCard: 'SIP',
+                limits: {
+                    yapeGen: 500,
+                    yapePas: 160
+                },
+                cycleResetTs: 0,
+                cards: {
+                    SIP: { key: 'SIP', name: 'SIP', debt: 428, initialDebt: 600, closingDay: '29', paymentDay: '25', note: 'Tarjeta principal • Cuotas bajas' },
+                    CMR: { key: 'CMR', name: 'CMR', debt: 2400, initialDebt: 2800, closingDay: '15', paymentDay: '05', note: 'Solo pagando deuda' },
+                    INTERBANK: { key: 'INTERBANK', name: 'Interbank', debt: 1800, initialDebt: 2200, closingDay: '20', paymentDay: '10', note: 'Solo pagando deuda' },
+                    BCP: { key: 'BCP', name: 'BCP', debt: 1500, initialDebt: 1900, closingDay: '10', paymentDay: '01', note: 'Solo pagando deuda' },
+                    IO: { key: 'IO', name: 'IO', debt: 900, initialDebt: 1100, closingDay: '22', paymentDay: '12', note: 'Solo pagando deuda' }
+                },
+                expenses: [
+                    {
+                        id: 'exp-demo-sip',
+                        desc: 'Almuerzo ejecutivo',
+                        amount: 28,
+                        category: 'Comida',
+                        method: 'SIP',
+                        date: today,
+                        isInstallment: false,
+                        installments: 1,
+                        createdAt: Date.now() - 8000
+                    },
+                    {
+                        id: 'exp-demo-pasaje',
+                        desc: 'Recarga pasajes',
+                        amount: 15,
+                        category: 'Pasajes',
+                        method: 'YAPE_PAS',
+                        date: today,
+                        isInstallment: false,
+                        installments: 1,
+                        createdAt: Date.now() - 4000
+                    }
+                ],
+                splits: []
+            };
+        }
+
+        let appData = getDefaultData();
+        let activeTab = 'inicio';
+        let activeExpenseFilter = 'ALL';
+        let confirmCallback = null;
+        let toastTimer = null;
+
+        function mergeAppData(incoming) {
+            const def = getDefaultData();
+            if (!incoming || typeof incoming !== 'object') return def;
+
+            const mergedCards = {};
+            CARD_KEYS.forEach(k => {
+                const base = def.cards[k];
+                const inc = incoming.cards && incoming.cards[k] ? incoming.cards[k] : {};
+                mergedCards[k] = {
+                    key: k,
+                    name: inc.name || base.name,
+                    debt: typeof inc.debt === 'number' ? inc.debt : base.debt,
+                    initialDebt: typeof inc.initialDebt === 'number' ? inc.initialDebt : (typeof inc.debt === 'number' ? inc.debt : base.initialDebt),
+                    closingDay: typeof inc.closingDay === 'string' ? inc.closingDay : base.closingDay,
+                    paymentDay: typeof inc.paymentDay === 'string' ? inc.paymentDay : base.paymentDay,
+                    note: typeof inc.note === 'string' ? inc.note : base.note
+                };
+            });
+
+            return {
+                starCard: CARD_KEYS.includes(incoming.starCard) ? incoming.starCard : 'SIP',
+                limits: {
+                    yapeGen: Number(incoming.limits?.yapeGen) || 500,
+                    yapePas: Number(incoming.limits?.yapePas) || 160
+                },
+                cycleResetTs: Number(incoming.cycleResetTs ?? incoming.yapeCycleResetTs) || 0,
+                cards: mergedCards,
+                expenses: Array.isArray(incoming.expenses) ? incoming.expenses : [],
+                splits: Array.isArray(incoming.splits) ? incoming.splits : []
+            };
+        }
+
+        // --- Persistencia híbrida (Firebase primario + localStorage fallback standalone) ---
+        const LOCAL_STORAGE_KEY = 'mis_finanzas_pe_v3';
+
+        function loadLocalFallback() {
+            try {
+                const raw = window.localStorage.getItem(LOCAL_STORAGE_KEY);
+                if (raw) {
+                    appData = mergeAppData(JSON.parse(raw));
+                }
+            } catch (err) {
+                console.warn('Almacenamiento local no disponible:', err);
+            }
+        }
+
+        function saveData(toastMessage) {
+            if (typeof window.syncToCloud === 'function') {
+                window.syncToCloud(appData);
+            }
+            try {
+                window.localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(appData));
+            } catch (err) {
+                // Ignorar silenciosamente si el navegador bloquea storage local
+            }
+            renderAll();
+            if (toastMessage) showToast(toastMessage);
+        }
+
+        // --- Toast y Modales ---
+        function showToast(msg, type = 'success') {
+            const el = document.getElementById('toast');
+            const icon = document.getElementById('toastIcon');
+            document.getElementById('toastMsg').textContent = msg;
+            if (type === 'error') {
+                icon.className = 'fa-solid fa-circle-exclamation text-rose-400';
+            } else if (type === 'info') {
+                icon.className = 'fa-solid fa-circle-info text-sky-400';
+            } else {
+                icon.className = 'fa-solid fa-circle-check text-emerald-400';
+            }
+            el.classList.remove('hidden');
+            clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => el.classList.add('hidden'), 2600);
+        }
+
+        function openModal(id) {
+            document.getElementById(id).classList.remove('hidden');
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).classList.add('hidden');
+        }
+
+        function openConfirmModal(title, message, onConfirm, btnText = 'Confirmar', isDanger = true) {
+            document.getElementById('confirmTitle').textContent = title;
+            document.getElementById('confirmMessage').textContent = message;
+            const btn = document.getElementById('confirmActionBtn');
+            btn.textContent = btnText;
+            btn.className = isDanger
+                ? 'flex-1 py-2.5 rounded-xl bg-rose-500 hover:bg-rose-400 text-white text-xs font-bold transition'
+                : 'flex-1 py-2.5 rounded-xl bg-indigo-500 hover:bg-indigo-400 text-white text-xs font-bold transition';
+            confirmCallback = onConfirm;
+            openModal('confirmModal');
+        }
+
+        function closeConfirmModal() {
+            confirmCallback = null;
+            closeModal('confirmModal');
+        }
+
+        document.getElementById('confirmActionBtn').addEventListener('click', () => {
+            if (typeof confirmCallback === 'function') {
+                const cb = confirmCallback;
+                closeConfirmModal();
+                cb();
+            }
+        });
+
+        // --- Navegación ---
+        function switchTab(tab) {
+            activeTab = tab;
+            ['inicio', 'tarjetas', 'gastos', 'cobrar'].forEach(t => {
+                document.getElementById(`view-${t}`).classList.toggle('hidden', t !== tab);
+                const nav = document.getElementById(`nav-${t}`);
+                if (t === tab) {
+                    nav.classList.remove('text-zinc-400');
+                    nav.classList.add('text-indigo-400');
+                } else {
+                    nav.classList.remove('text-indigo-400');
+                    nav.classList.add('text-zinc-400');
+                }
+            });
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function goToExpensesFiltered(filterKey) {
+            setExpenseFilter(filterKey);
+            switchTab('gastos');
+        }
+
+        // --- Cálculo Próximo Sueldo (Día 25; si cae sábado o domingo -> viernes previo) ---
+        function getPaydayInfo() {
+            const now = new Date();
+            const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+            function adjustPayday(year, month) {
+                const d = new Date(year, month, 25);
+                const dow = d.getDay();
+                if (dow === 6) d.setDate(24);
+                else if (dow === 0) d.setDate(23);
+                return d;
+            }
+
+            const msDay = 86400000;
+            const thisMonthPay = adjustPayday(today.getFullYear(), today.getMonth());
+            const diff = Math.round((thisMonthPay - today) / msDay);
+
+            if (diff === 0) {
+                return {
+                    isToday: true,
+                    dateStr: `${thisMonthPay.getDate()} de ${MONTHS_ES[thisMonthPay.getMonth()]}`,
+                    daysLeft: 0
+                };
+            } else if (diff > 0) {
+                return {
+                    isToday: false,
+                    dateStr: `${thisMonthPay.getDate()} de ${MONTHS_ES[thisMonthPay.getMonth()]}`,
+                    daysLeft: diff
+                };
+            } else {
+                const nextPay = adjustPayday(today.getFullYear(), today.getMonth() + 1);
+                const nextDiff = Math.round((nextPay - today) / msDay);
+                return {
+                    isToday: false,
+                    dateStr: `${nextPay.getDate()} de ${MONTHS_ES[nextPay.getMonth()]}`,
+                    daysLeft: nextDiff
+                };
+            }
+        }
+
+        // --- Cálculos del Ciclo Actual ---
+        function isItemInActiveCycle(item) {
+            const resetTs = appData.cycleResetTs || 0;
+            if (resetTs > 0) {
+                return (item.createdAt || 0) >= resetTs;
+            }
+            return (item.date || '').startsWith(getCurrentMonthPrefix());
+        }
+
+        function getMethodCycleSpend(methodKey) {
+            let total = 0;
+            appData.expenses.forEach(e => {
+                if (e.method === methodKey && isItemInActiveCycle(e)) {
+                    total += Number(e.amount) || 0;
+                }
+            });
+            appData.splits.forEach(s => {
+                if (s.method === methodKey && isItemInActiveCycle(s)) {
+                    total += Number(s.totalAmount) || 0;
+                }
+            });
+            return total;
+        }
+
+        function getAllCardsCycleStats() {
+            let total = 0;
+            const activeNames = [];
+            CARD_KEYS.forEach(k => {
+                const spent = getMethodCycleSpend(k);
+                if (spent > 0) {
+                    total += spent;
+                    activeNames.push(appData.cards[k].name);
+                }
+            });
+            return { total, activeNames };
+        }
+
+        function getTotalDebt() {
+            return CARD_KEYS.reduce((sum, k) => sum + (Number(appData.cards[k]?.debt) || 0), 0);
+        }
+
+        function getSplitTotals(split) {
+            const target = Number(split.targetAmount ?? split.totalAmount) || 0;
+            const recovered = (split.repayments || []).reduce((acc, r) => acc + (Number(r.amount) || 0), 0);
+            const remaining = Math.max(0, target - recovered);
+            return { target, recovered, remaining };
+        }
+
+        function getTotalPendingReceivables() {
+            return appData.splits.reduce((sum, s) => sum + getSplitTotals(s).remaining, 0);
+        }
+
+        // --- Renderizado General ---
+        function renderAll() {
+            renderPaydayCard();
+            renderHomeSummaryCards();
+            renderYapeLimits();
+            renderStarAndOtherCards();
+            renderCardsTab();
+            renderExpensesTab();
+            renderSplitsTab();
+        }
+
+        function renderPaydayCard() {
+            const info = getPaydayInfo();
+            document.getElementById('paydayDateText').textContent = info.dateStr;
+            const statusEl = document.getElementById('paydayStatusText');
+
+            if (info.isToday) {
+                statusEl.textContent = '¡Hoy te pagan!';
+                statusEl.className = 'inline-flex items-center px-3 py-1.5 rounded-xl bg-emerald-500/15 border border-emerald-500/25 text-xs font-bold text-emerald-300';
+            } else {
+                statusEl.textContent = info.daysLeft === 1 ? 'Falta 1 día' : `Faltan ${info.daysLeft} días`;
+                statusEl.className = 'inline-flex items-center px-3 py-1.5 rounded-xl bg-indigo-500/15 border border-indigo-500/20 text-xs font-bold text-indigo-300 tabular-nums';
+            }
+        }
+
+        function renderHomeSummaryCards() {
+            const yapeTotal = getMethodCycleSpend('YAPE_GEN') + getMethodCycleSpend('YAPE_PAS');
+            document.getElementById('homeYapeSpent').textContent = formatSoles(yapeTotal);
+
+            const cardsStats = getAllCardsCycleStats();
+            document.getElementById('homeCardsSpent').textContent = formatSoles(cardsStats.total);
+
+            const subEl = document.getElementById('homeCardsSub');
+            if (cardsStats.activeNames.length === 0) {
+                subEl.textContent = 'Sin consumos en el ciclo';
+            } else if (cardsStats.activeNames.length <= 2) {
+                subEl.textContent = cardsStats.activeNames.join(' + ');
+            } else {
+                subEl.textContent = `En ${cardsStats.activeNames.length} tarjetas`;
+            }
+        }
+
+        function renderYapeLimits() {
+            const genSpent = getMethodCycleSpend('YAPE_GEN');
+            const pasSpent = getMethodCycleSpend('YAPE_PAS');
+            const genLimit = Math.max(1, Number(appData.limits.yapeGen) || 500);
+            const pasLimit = Math.max(1, Number(appData.limits.yapePas) || 160);
+
+            const cycleLabel = document.getElementById('cycleLabelHome');
+            if (appData.cycleResetTs > 0) {
+                const d = new Date(appData.cycleResetTs);
+                cycleLabel.textContent = `Desde el ${d.getDate()} de ${MONTHS_ES[d.getMonth()]}`;
+            } else {
+                const now = new Date();
+                cycleLabel.textContent = `Mes de ${MONTHS_ES[now.getMonth()]}`;
+            }
+
+            // Yape General
+            const genPct = Math.min(100, (genSpent / genLimit) * 100);
+            const genLeft = genLimit - genSpent;
+            document.getElementById('yapeGenSpentText').innerHTML = `${formatSoles(genSpent)} <span class="text-zinc-400 font-normal">/ ${formatSoles(genLimit)}</span>`;
+            const genLeftEl = document.getElementById('yapeGenLeftText');
+            genLeftEl.textContent = genLeft >= 0 ? `Quedan ${formatSoles(genLeft)}` : `Excedido ${formatSoles(Math.abs(genLeft))}`;
+            genLeftEl.className = genLeft >= 0 ? (genPct > 80 ? 'text-amber-400 font-medium' : 'text-emerald-400 font-medium') : 'text-rose-400 font-semibold';
+            const genBar = document.getElementById('yapeGenBar');
+            genBar.style.width = `${genPct}%`;
+            genBar.className = `h-full rounded-full transition-all duration-500 ${genPct >= 95 ? 'bg-rose-500' : genPct >= 75 ? 'bg-amber-400' : 'bg-violet-500'}`;
+
+            // Yape Pasajes
+            const pasPct = Math.min(100, (pasSpent / pasLimit) * 100);
+            const pasLeft = pasLimit - pasSpent;
+            document.getElementById('yapePasSpentText').innerHTML = `${formatSoles(pasSpent)} <span class="text-zinc-400 font-normal">/ ${formatSoles(pasLimit)}</span>`;
+            const pasLeftEl = document.getElementById('yapePasLeftText');
+            pasLeftEl.textContent = pasLeft >= 0 ? `Quedan ${formatSoles(pasLeft)}` : `Excedido ${formatSoles(Math.abs(pasLeft))}`;
+            pasLeftEl.className = pasLeft >= 0 ? (pasPct > 80 ? 'text-amber-400 font-medium' : 'text-emerald-400 font-medium') : 'text-rose-400 font-semibold';
+            const pasBar = document.getElementById('yapePasBar');
+            pasBar.style.width = `${pasPct}%`;
+            pasBar.className = `h-full rounded-full transition-all duration-500 ${pasPct >= 95 ? 'bg-rose-500' : pasPct >= 75 ? 'bg-amber-400' : 'bg-sky-400'}`;
+        }
+
+        function formatCardDates(card) {
+            const parts = [];
+            if (card.closingDay) parts.push(`Cierre ${card.closingDay}`);
+            if (card.paymentDay) parts.push(`Pago ${card.paymentDay}`);
+            if (card.note) parts.push(card.note);
+            return parts.join(' • ') || 'Sin fechas configuradas';
+        }
+
+        function renderStarAndOtherCards() {
+            const starKey = appData.starCard || 'SIP';
+            const card = appData.cards[starKey];
+            const theme = CARD_THEMES[starKey] || CARD_THEMES.SIP;
+
+            document.getElementById('starCardSelect').value = starKey;
+            document.getElementById('starCardName').textContent = `Tarjeta ${card.name}`;
+            document.getElementById('starCardMeta').textContent = formatCardDates(card);
+            document.getElementById('starCardDebt').textContent = formatSoles(card.debt);
+            document.getElementById('starCardCycleSpend').textContent = formatSoles(getMethodCycleSpend(starKey));
+
+            document.getElementById('starCardContainer').className = `rounded-2xl p-4 relative overflow-hidden border transition-all duration-300 bg-ink-850 ${theme.border}`;
+            document.getElementById('starCardGlow').className = `absolute -right-10 -top-10 w-36 h-36 ${theme.glow} rounded-full blur-3xl pointer-events-none transition-all duration-300`;
+            document.getElementById('starCardBadge').className = `inline-flex items-center space-x-1.5 text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full border ${theme.badge}`;
+            document.getElementById('starCardDebt').className = `text-xl font-extrabold tabular-nums ${theme.text}`;
+            document.getElementById('starSipCalcBtn').classList.toggle('hidden', starKey !== 'SIP');
+
+            // Mini-lista de las otras 4 tarjetas
+            const otherKeys = CARD_KEYS.filter(k => k !== starKey);
+            const grid = document.getElementById('otherCardsGrid');
+            grid.innerHTML = otherKeys.map(k => {
+                const c = appData.cards[k];
+                const t = CARD_THEMES[k];
+                const spent = getMethodCycleSpend(k);
+                return `
+                    <button onclick="switchTab('tarjetas')" class="bg-ink-900/90 hover:bg-ink-800 border border-white/[0.05] rounded-xl px-3 py-2 flex items-center justify-between text-left transition active:scale-[0.98]">
+                        <div class="flex items-center space-x-2 min-w-0">
+                            <span class="w-2 h-2 rounded-full ${t.dot} shrink-0"></span>
+                            <span class="text-xs font-semibold text-zinc-200 truncate">${escapeHTML(c.name)}</span>
+                        </div>
+                        <span class="text-xs font-bold tabular-nums ${spent > 0 ? 'text-white' : 'text-zinc-500'}">${formatSoles(spent)}</span>
+                    </button>
+                `;
+            }).join('');
+        }
+
+        function renderCardsTab() {
+            const totalDebt = getTotalDebt();
+            const totalInitial = CARD_KEYS.reduce((sum, k) => sum + Math.max(Number(appData.cards[k].initialDebt) || 0, Number(appData.cards[k].debt) || 0), 0);
+            const reduced = Math.max(0, totalInitial - totalDebt);
+            const pctReduced = totalInitial > 0 ? Math.min(100, Math.round((reduced / totalInitial) * 100)) : 0;
+
+            document.getElementById('cardsTotalDebt').textContent = formatSoles(totalDebt);
+            document.getElementById('cardsReducedBadge').textContent = `${pctReduced}% bajado`;
+            document.getElementById('cardsInitialRefText').textContent = `Base inicial: ${formatSoles(totalInitial)}`;
+            document.getElementById('cardsGlobalProgressBar').style.width = `${pctReduced}%`;
+
+            const container = document.getElementById('cardsList');
+            container.innerHTML = CARD_KEYS.map(k => {
+                const c = appData.cards[k];
+                const t = CARD_THEMES[k];
+                const cycleSpend = getMethodCycleSpend(k);
+                const initRef = Number(c.initialDebt) || 0;
+                const debt = Number(c.debt) || 0;
+                const paidDown = Math.max(0, initRef - debt);
+                const progressPct = initRef > 0 ? Math.min(100, Math.max(0, Math.round((paidDown / initRef) * 100))) : (debt === 0 ? 100 : 0);
+                const isStar = appData.starCard === k;
+
+                return `
+                    <div class="glass-card rounded-2xl p-4 space-y-3 border ${isStar ? t.border : 'border-white/[0.06]'}">
+                        <div class="flex items-start justify-between gap-2">
+                            <div class="min-w-0">
+                                <div class="flex items-center space-x-2">
+                                    <span class="w-2.5 h-2.5 rounded-full ${t.dot} shrink-0"></span>
+                                    <h3 class="text-base font-bold text-white">${escapeHTML(c.name)}</h3>
+                                    ${isStar ? `<span class="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded-full border ${t.badge}">Estrella</span>` : ''}
+                                </div>
+                                <p class="text-[11px] text-zinc-400 mt-0.5 truncate">${escapeHTML(formatCardDates(c))}</p>
+                            </div>
+                            <div class="text-right shrink-0">
+                                <span class="text-[10px] text-zinc-400 block">Deuda actual</span>
+                                <span class="text-base font-extrabold ${debt > 0 ? 'text-rose-400' : 'text-emerald-400'} tabular-nums">${formatSoles(debt)}</span>
+                            </div>
+                        </div>
+
+                        <div class="space-y-1.5">
+                            <div class="flex items-center justify-between text-[11px] tabular-nums">
+                                <span class="text-zinc-400">Gasto del ciclo: <strong class="text-zinc-200">${formatSoles(cycleSpend)}</strong></span>
+                                <span class="text-emerald-400 font-semibold">${progressPct}% reducido</span>
+                            </div>
+                            <div class="w-full h-1.5 bg-ink-900 rounded-full overflow-hidden">
+                                <div class="h-full rounded-full ${t.bar} transition-all duration-500" style="width: ${progressPct}%"></div>
+                            </div>
+                            <div class="flex justify-between text-[10px] text-zinc-500 tabular-nums">
+                                <span>Base inicial: ${formatSoles(initRef)}</span>
+                                <span>Bajaste: ${formatSoles(paidDown)}</span>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center gap-2 pt-1">
+                            <button onclick="openCardPayModal('${k}')" class="flex-1 py-2 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/25 text-emerald-400 text-xs font-bold transition active:scale-95 flex items-center justify-center space-x-1.5">
+                                <i class="fa-solid fa-money-bill-wave text-[11px]"></i>
+                                <span>Abonar / Pagar</span>
+                            </button>
+                            <button onclick="openCardEditModal('${k}')" class="py-2 px-3.5 rounded-xl bg-ink-900 hover:bg-ink-800 border border-white/[0.08] text-zinc-300 hover:text-white text-xs font-semibold transition active:scale-95 flex items-center space-x-1.5">
+                                <i class="fa-solid fa-pen text-[10px]"></i>
+                                <span>Editar</span>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function getCategoryIcon(cat) {
+            const map = {
+                Comida: 'fa-utensils',
+                Pasajes: 'fa-bus',
+                Salidas: 'fa-champagne-glasses',
+                'Música/Equipos': 'fa-guitar',
+                Servicios: 'fa-bolt',
+                Otros: 'fa-tag'
+            };
+            return map[cat] || 'fa-tag';
+        }
+
+        function setExpenseFilter(filter) {
+            activeExpenseFilter = filter;
+            document.querySelectorAll('.exp-filter-btn').forEach(btn => {
+                const isSel = btn.id === `filter-${filter}`;
+                btn.className = isSel
+                    ? 'exp-filter-btn px-3 py-1.5 rounded-xl text-xs font-semibold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 shrink-0 transition'
+                    : 'exp-filter-btn px-3 py-1.5 rounded-xl text-xs font-medium bg-ink-800 text-zinc-400 border border-white/[0.06] shrink-0 transition';
+            });
+            renderExpensesTab();
+        }
+
+        function renderExpensesTab() {
+            const cycleTotal = appData.expenses
+                .filter(e => isItemInActiveCycle(e))
+                .reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
+            document.getElementById('expensesCycleSummary').textContent = `Ciclo actual: ${formatSoles(cycleTotal)}`;
+
+            let filtered = appData.expenses.slice();
+            if (activeExpenseFilter === 'YAPE') {
+                filtered = filtered.filter(e => e.method === 'YAPE_GEN' || e.method === 'YAPE_PAS');
+            } else if (activeExpenseFilter === 'CARDS') {
+                filtered = filtered.filter(e => CARD_KEYS.includes(e.method));
+            } else if (activeExpenseFilter === 'SIP') {
+                filtered = filtered.filter(e => e.method === 'SIP');
+            } else if (activeExpenseFilter === 'EFECTIVO') {
+                filtered = filtered.filter(e => e.method === 'EFECTIVO');
+            }
+
+            filtered.sort((a, b) => {
+                if (b.date !== a.date) return (b.date || '').localeCompare(a.date || '');
+                return (b.createdAt || 0) - (a.createdAt || 0);
+            });
+
+            const container = document.getElementById('expensesList');
+            if (filtered.length === 0) {
+                container.innerHTML = `
+                    <div class="glass-card rounded-2xl p-8 text-center space-y-2">
+                        <i class="fa-solid fa-receipt text-2xl text-zinc-600"></i>
+                        <p class="text-xs text-zinc-400">No hay gastos registrados en este filtro.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = filtered.map(e => {
+                const methodLabel = METHOD_LABELS[e.method] || e.method;
+                const isCard = CARD_KEYS.includes(e.method);
+                const badgeClass = e.method === 'YAPE_GEN'
+                    ? 'bg-violet-500/15 text-violet-300 border-violet-500/25'
+                    : e.method === 'YAPE_PAS'
+                        ? 'bg-sky-500/15 text-sky-300 border-sky-500/25'
+                        : isCard
+                            ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/25'
+                            : 'bg-zinc-800 text-zinc-300 border-white/10';
+
+                return `
+                    <div class="glass-card rounded-2xl p-3.5 flex items-center justify-between gap-2">
+                        <div class="flex items-center space-x-3 min-w-0">
+                            <div class="w-10 h-10 rounded-xl bg-ink-900 border border-white/[0.06] flex items-center justify-center text-indigo-400 shrink-0">
+                                <i class="fa-solid ${getCategoryIcon(e.category)} text-sm"></i>
+                            </div>
+                            <div class="min-w-0">
+                                <h4 class="text-sm font-semibold text-white truncate">${escapeHTML(e.desc)}</h4>
+                                <div class="flex flex-wrap items-center gap-1.5 mt-1">
+                                    <span class="text-[10px] font-semibold px-1.5 py-0.5 rounded-md border ${badgeClass}">${escapeHTML(methodLabel)}</span>
+                                    <span class="text-[10px] text-zinc-400">${formatShortDate(e.date)}</span>
+                                    ${e.isInstallment ? `<span class="text-[10px] font-semibold text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded-md">${e.installments || 3} cuotas</span>` : ''}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center space-x-1 shrink-0">
+                            <span class="text-sm font-extrabold text-white tabular-nums mr-1">-${formatSoles(e.amount)}</span>
+                            <button onclick="openExpenseModal('${e.id}')" class="w-8 h-8 rounded-lg bg-ink-900 hover:bg-ink-700 text-zinc-400 hover:text-indigo-300 flex items-center justify-center transition" aria-label="Editar gasto" title="Editar">
+                                <i class="fa-solid fa-pen text-[11px]"></i>
+                            </button>
+                            <button onclick="promptDeleteExpense('${e.id}')" class="w-8 h-8 rounded-lg bg-ink-900 hover:bg-rose-500/15 text-zinc-400 hover:text-rose-400 flex items-center justify-center transition" aria-label="Eliminar gasto" title="Eliminar">
+                                <i class="fa-solid fa-trash text-[11px]"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderSplitsTab() {
+            const totalPending = getTotalPendingReceivables();
+            document.getElementById('splitsSummaryText').textContent = `Pendiente por cobrar: ${formatSoles(totalPending)}`;
+
+            const container = document.getElementById('splitsList');
+            if (appData.splits.length === 0) {
+                container.innerHTML = `
+                    <div class="glass-card rounded-2xl p-8 text-center space-y-2.5">
+                        <div class="w-11 h-11 rounded-2xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center mx-auto">
+                            <i class="fa-solid fa-hand-holding-dollar text-lg"></i>
+                        </div>
+                        <p class="text-sm font-semibold text-zinc-200">Sin cobros pendientes</p>
+                        <p class="text-xs text-zinc-400 max-w-[240px] mx-auto">Registra aquí la cancha de fútbol (S/ 160, cuota S/ 16) o comidas grupales pagadas con Yape o tarjeta.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const sorted = appData.splits.slice().sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+            container.innerHTML = sorted.map(s => {
+                const { target, recovered, remaining } = getSplitTotals(s);
+                const pct = target > 0 ? Math.min(100, Math.round((recovered / target) * 100)) : 100;
+                const isSettled = remaining <= 0.009;
+                const methodLabel = METHOD_LABELS[s.method] || s.method;
+                const repayments = s.repayments || [];
+                const peopleLeft = (!isSettled && s.shareAmount > 0) ? Math.ceil(remaining / s.shareAmount) : 0;
+
+                return `
+                    <div class="glass-card rounded-2xl p-4 space-y-3 border ${isSettled ? 'border-emerald-500/30' : 'border-white/[0.06]'}">
+                        <div class="flex items-start justify-between gap-2">
+                            <div class="min-w-0">
+                                <div class="flex items-center space-x-2">
+                                    <h3 class="text-sm font-bold text-white truncate">${escapeHTML(s.title)}</h3>
+                                    ${isSettled ? '<span class="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/25 shrink-0">Cobrado</span>' : ''}
+                                </div>
+                                <div class="flex flex-wrap items-center gap-1.5 mt-1 text-[10px] text-zinc-400">
+                                    <span class="px-1.5 py-0.5 rounded-md bg-ink-900 border border-white/[0.08] text-zinc-300 font-medium">${escapeHTML(methodLabel)}</span>
+                                    <span>${formatShortDate(s.date)}</span>
+                                    <span>• Total ${formatSoles(s.totalAmount)}</span>
+                                    ${peopleLeft > 0 ? `<span class="text-amber-400 font-medium">• Faltan ~${peopleLeft}</span>` : ''}
+                                </div>
+                            </div>
+
+                            <div class="flex items-center space-x-1 shrink-0">
+                                <button onclick="openSplitModal('${s.id}')" class="w-8 h-8 rounded-lg bg-ink-900 hover:bg-ink-700 text-zinc-400 hover:text-indigo-300 flex items-center justify-center transition" title="Editar">
+                                    <i class="fa-solid fa-pen text-[11px]"></i>
+                                </button>
+                                <button onclick="promptDeleteSplit('${s.id}')" class="w-8 h-8 rounded-lg bg-ink-900 hover:bg-rose-500/15 text-zinc-400 hover:text-rose-400 flex items-center justify-center transition" title="Eliminar">
+                                    <i class="fa-solid fa-trash text-[11px]"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="space-y-1.5">
+                            <div class="w-full h-2 bg-ink-900 rounded-full overflow-hidden">
+                                <div class="h-full bg-emerald-400 rounded-full transition-all duration-500" style="width: ${pct}%"></div>
+                            </div>
+                            <div class="grid grid-cols-3 gap-1 text-[11px] tabular-nums pt-0.5">
+                                <div>
+                                    <span class="text-[10px] text-zinc-400 block">A cobrar</span>
+                                    <strong class="text-zinc-200">${formatSoles(target)}</strong>
+                                </div>
+                                <div class="text-center">
+                                    <span class="text-[10px] text-zinc-400 block">Recuperado</span>
+                                    <strong class="text-emerald-400">${formatSoles(recovered)}</strong>
+                                </div>
+                                <div class="text-right">
+                                    <span class="text-[10px] text-zinc-400 block">Falta</span>
+                                    <strong class="${isSettled ? 'text-emerald-400' : 'text-amber-400'}">${formatSoles(remaining)}</strong>
+                                </div>
+                            </div>
+                        </div>
+
+                        ${repayments.length > 0 ? `
+                            <div class="bg-ink-950/80 border border-white/[0.06] rounded-xl p-2.5 space-y-1.5">
+                                <p class="text-[10px] font-semibold uppercase tracking-wider text-zinc-400">Abonos recibidos (${repayments.length})</p>
+                                <div class="space-y-1 max-h-32 overflow-y-auto pr-1">
+                                    ${repayments.map(r => `
+                                        <div class="flex items-center justify-between text-xs py-1 border-b border-white/[0.05] last:border-0">
+                                            <span class="text-zinc-300 truncate">${escapeHTML(r.person || 'Abono')} <span class="text-[10px] text-zinc-500">• ${formatShortDate(r.date)}</span></span>
+                                            <div class="flex items-center space-x-2 shrink-0">
+                                                <span class="font-bold text-emerald-400 tabular-nums">+${formatSoles(r.amount)}</span>
+                                                <button onclick="deleteRepayment('${s.id}', '${r.id}')" class="text-zinc-500 hover:text-rose-400 text-[10px] p-1" title="Quitar abono">
+                                                    <i class="fa-solid fa-xmark"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        ` : ''}
+
+                        ${!isSettled ? `
+                            <div class="flex items-center gap-2 pt-0.5">
+                                ${s.shareAmount > 0 ? `
+                                    <button onclick="quickAddRepayment('${s.id}')" class="flex-1 py-2.5 px-3 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/25 text-emerald-400 text-xs font-bold tabular-nums transition active:scale-95 flex items-center justify-center space-x-1">
+                                        <span>+ ${formatSoles(s.shareAmount)}</span>
+                                    </button>
+                                ` : ''}
+                                <button onclick="openRepayModal('${s.id}')" class="flex-1 py-2.5 px-3 rounded-xl bg-ink-900 hover:bg-ink-800 border border-white/[0.08] text-zinc-200 text-xs font-semibold transition active:scale-95 flex items-center justify-center space-x-1.5">
+                                    <i class="fa-solid fa-user-plus text-[10px] text-emerald-400"></i>
+                                    <span>Monto / Nombre</span>
+                                </button>
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // ==========================================
+        // ACCIONES: TARJETA ESTRELLA, LÍMITES, CICLO
+        // ==========================================
+        function changeStarCard(cardKey) {
+            if (!CARD_KEYS.includes(cardKey)) return;
+            appData.starCard = cardKey;
+            saveData(`Tarjeta estrella: ${appData.cards[cardKey].name}`);
+        }
+
+        function openYapeLimitModal(key) {
+            document.getElementById('yapeEditKey').value = key;
+            const isGen = key === 'yapeGen';
+            document.getElementById('yapeModalTitle').textContent = isGen ? 'Editar Yape General' : 'Editar Yape Pasajes';
+            document.getElementById('yapeEditLabel').textContent = isGen ? 'Límite mensual Yape General (S/)' : 'Límite mensual Yape Pasajes (S/)';
+            document.getElementById('yapeEditValue').value = appData.limits[key];
+            openModal('yapeLimitModal');
+            setTimeout(() => document.getElementById('yapeEditValue').focus(), 100);
+        }
+
+        function handleYapeLimitSubmit(e) {
+            e.preventDefault();
+            const key = document.getElementById('yapeEditKey').value;
+            const val = parseFloat(document.getElementById('yapeEditValue').value);
+            if (isNaN(val) || val <= 0) return;
+            appData.limits[key] = val;
+            closeModal('yapeLimitModal');
+            saveData('Límite actualizado');
+        }
+
+        function promptResetCycle() {
+            openConfirmModal(
+                '¿Reiniciar ciclo mensual?',
+                'Tus contadores de "Gastado en Yape", "Gastado en Tarjetas" y barras de Yape volverán a S/ 0.00. Tus deudas de tarjetas y tu historial se mantienen intactos.',
+                () => {
+                    appData.cycleResetTs = Date.now();
+                    saveData('Ciclo reiniciado a S/ 0.00');
+                },
+                'Sí, reiniciar',
+                false
+            );
+        }
+
+        // ==========================================
+        // ACCIONES: GASTOS
+        // ==========================================
+        function openExpenseModal(editId = null) {
+            document.getElementById('expenseForm').reset();
+            document.getElementById('expEditId').value = editId || '';
+
+            if (editId) {
+                const exp = appData.expenses.find(x => x.id === editId);
+                if (!exp) return;
+                document.getElementById('expenseModalTitle').innerHTML = '<i class="fa-solid fa-pen text-indigo-400"></i><span>Editar Gasto</span>';
+                document.getElementById('expSubmitBtn').textContent = 'Guardar Cambios';
+                document.getElementById('expAmount').value = exp.amount;
+                document.getElementById('expDate').value = exp.date || getTodayStr();
+                document.getElementById('expDesc').value = exp.desc;
+                document.getElementById('expCategory').value = exp.category || 'Otros';
+                document.getElementById('expMethod').value = exp.method || 'YAPE_GEN';
+                document.getElementById('expIsInstallment').checked = Boolean(exp.isInstallment);
+                document.getElementById('expInstallments').value = String(exp.installments || 3);
+            } else {
+                document.getElementById('expenseModalTitle').innerHTML = '<i class="fa-solid fa-circle-plus text-indigo-400"></i><span>Nuevo Gasto</span>';
+                document.getElementById('expSubmitBtn').textContent = 'Guardar Gasto';
+                document.getElementById('expDate').value = getTodayStr();
+                document.getElementById('expMethod').value = 'YAPE_GEN';
+                document.getElementById('expIsInstallment').checked = false;
+                document.getElementById('expInstallments').value = '3';
+            }
+
+            toggleSipInstallmentsBox();
+            openModal('expenseModal');
+        }
+
+        function toggleSipInstallmentsBox() {
+            const method = document.getElementById('expMethod').value;
+            const box = document.getElementById('sipInstallmentBox');
+            if (method === 'SIP') {
+                box.classList.remove('hidden');
+                toggleSipCountRow();
+            } else {
+                box.classList.add('hidden');
+                document.getElementById('expIsInstallment').checked = false;
+                document.getElementById('sipCountRow').classList.add('hidden');
+            }
+        }
+
+        function toggleSipCountRow() {
+            const checked = document.getElementById('expIsInstallment').checked;
+            document.getElementById('sipCountRow').classList.toggle('hidden', !checked);
+            if (checked) updateExpenseSipEstimate();
+        }
+
+        function calcSipNumbers(amount, cuotas, monthlyRatePct) {
+            const extra = amount * (monthlyRatePct / 100) * cuotas;
+            const total = amount + extra;
+            const monthly = cuotas > 0 ? total / cuotas : total;
+            return { extra, total, monthly };
+        }
+
+        function updateExpenseSipEstimate() {
+            const amount = parseFloat(document.getElementById('expAmount').value) || 0;
+            const cuotas = parseInt(document.getElementById('expInstallments').value, 10) || 3;
+            const res = calcSipNumbers(amount, cuotas, 2.5);
+            document.getElementById('expSipPreview').textContent =
+                `Aprox. ${formatSoles(res.monthly)}/mes (interés est. ${formatSoles(res.extra)})`;
+        }
+
+        function handleExpenseSubmit(e) {
+            e.preventDefault();
+            const editId = document.getElementById('expEditId').value;
+            const amount = parseFloat(document.getElementById('expAmount').value);
+            const date = document.getElementById('expDate').value;
+            const desc = document.getElementById('expDesc').value.trim();
+            const category = document.getElementById('expCategory').value;
+            const method = document.getElementById('expMethod').value;
+            const isInstallment = method === 'SIP' && document.getElementById('expIsInstallment').checked;
+            const installments = isInstallment ? parseInt(document.getElementById('expInstallments').value, 10) : 1;
+
+            if (!desc || isNaN(amount) || amount <= 0) return;
+
+            if (editId) {
+                const idx = appData.expenses.findIndex(x => x.id === editId);
+                if (idx === -1) return;
+                const old = appData.expenses[idx];
+
+                if (CARD_KEYS.includes(old.method) && appData.cards[old.method]) {
+                    appData.cards[old.method].debt = Math.max(0, appData.cards[old.method].debt - Number(old.amount));
+                }
+                if (CARD_KEYS.includes(method) && appData.cards[method]) {
+                    appData.cards[method].debt += amount;
+                }
+
+                appData.expenses[idx] = { ...old, desc, amount, category, method, date, isInstallment, installments };
+                closeModal('expenseModal');
+                saveData('Gasto actualizado');
+            } else {
+                appData.expenses.push({
+                    id: 'exp-' + Date.now() + '-' + Math.floor(Math.random() * 1000),
+                    desc,
+                    amount,
+                    category,
+                    method,
+                    date,
+                    isInstallment,
+                    installments,
+                    createdAt: Date.now()
+                });
+
+                if (CARD_KEYS.includes(method) && appData.cards[method]) {
+                    appData.cards[method].debt += amount;
+                }
+
+                closeModal('expenseModal');
+                saveData('Gasto registrado');
+            }
+        }
+
+        function promptDeleteExpense(id) {
+            const exp = appData.expenses.find(x => x.id === id);
+            if (!exp) return;
+            openConfirmModal(
+                '¿Eliminar gasto?',
+                `Se eliminará "${exp.desc}" (${formatSoles(exp.amount)}) y se recalcularán tus saldos.`,
+                () => {
+                    if (CARD_KEYS.includes(exp.method) && appData.cards[exp.method]) {
+                        appData.cards[exp.method].debt = Math.max(0, appData.cards[exp.method].debt - Number(exp.amount));
+                    }
+                    appData.expenses = appData.expenses.filter(x => x.id !== id);
+                    saveData('Gasto eliminado');
+                },
+                'Eliminar',
+                true
+            );
+        }
+
+        // ==========================================
+        // ACCIONES: TARJETAS Y SIMULADOR SIP
+        // ==========================================
+        function openCardPayModal(cardKey) {
+            const c = appData.cards[cardKey];
+            if (!c) return;
+            document.getElementById('payCardKey').value = cardKey;
+            document.getElementById('cardPayTitle').textContent = `Abonar a ${c.name}`;
+            document.getElementById('payCardCurrentDebt').textContent = formatSoles(c.debt);
+            document.getElementById('payCardAmount').value = '';
+            openModal('cardPayModal');
+            setTimeout(() => document.getElementById('payCardAmount').focus(), 100);
+        }
+
+        function handleCardPaySubmit(e) {
+            e.preventDefault();
+            const key = document.getElementById('payCardKey').value;
+            const amount = parseFloat(document.getElementById('payCardAmount').value);
+            if (!appData.cards[key] || isNaN(amount) || amount <= 0) return;
+
+            appData.cards[key].debt = Math.max(0, appData.cards[key].debt - amount);
+            closeModal('cardPayModal');
+            saveData(`Pago de ${formatSoles(amount)} aplicado a ${appData.cards[key].name}`);
+        }
+
+        function openCardEditModal(cardKey) {
+            const c = appData.cards[cardKey];
+            if (!c) return;
+            document.getElementById('editCardKey').value = cardKey;
+            document.getElementById('cardEditTitle').textContent = `Editar ${c.name}`;
+            document.getElementById('editCardDebt').value = c.debt;
+            document.getElementById('editCardInitial').value = c.initialDebt;
+            document.getElementById('editCardClosing').value = c.closingDay || '';
+            document.getElementById('editCardPayment').value = c.paymentDay || '';
+            document.getElementById('editCardNote').value = c.note || '';
+            openModal('cardEditModal');
+        }
+
+        function handleCardEditSubmit(e) {
+            e.preventDefault();
+            const key = document.getElementById('editCardKey').value;
+            const debt = parseFloat(document.getElementById('editCardDebt').value);
+            const initialDebt = parseFloat(document.getElementById('editCardInitial').value);
+            const closingDay = document.getElementById('editCardClosing').value.trim();
+            const paymentDay = document.getElementById('editCardPayment').value.trim();
+            const note = document.getElementById('editCardNote').value.trim();
+
+            if (!appData.cards[key] || isNaN(debt) || debt < 0 || isNaN(initialDebt) || initialDebt < 0) return;
+
+            appData.cards[key].debt = debt;
+            appData.cards[key].initialDebt = initialDebt;
+            appData.cards[key].closingDay = closingDay;
+            appData.cards[key].paymentDay = paymentDay;
+            appData.cards[key].note = note;
+            closeModal('cardEditModal');
+            saveData(`${appData.cards[key].name} actualizada`);
+        }
+
+        function runInlineSipCalc() {
+            const amt = parseFloat(document.getElementById('inlineSipAmount').value) || 0;
+            const cuotas = parseInt(document.getElementById('inlineSipCuotas').value, 10) || 3;
+            const rate = parseFloat(document.getElementById('inlineSipRate').value) || 0;
+            const res = calcSipNumbers(amt, cuotas, rate);
+            document.getElementById('inlineSipMonthly').textContent = formatSoles(res.monthly);
+            document.getElementById('inlineSipExtra').textContent = `+${formatSoles(res.extra)}`;
+            document.getElementById('inlineSipTotal').textContent = formatSoles(res.total);
+        }
+
+        function openSipCalcModal() {
+            runModalSipCalc();
+            openModal('sipCalcModal');
+        }
+
+        function runModalSipCalc() {
+            const amt = parseFloat(document.getElementById('calcSipAmount').value) || 0;
+            const cuotas = parseInt(document.getElementById('calcSipCuotas').value, 10) || 3;
+            const rate = parseFloat(document.getElementById('calcSipRate').value) || 0;
+            const res = calcSipNumbers(amt, cuotas, rate);
+            document.getElementById('calcResMonthly').textContent = formatSoles(res.monthly);
+            document.getElementById('calcResExtra').textContent = `+ ${formatSoles(res.extra)}`;
+            document.getElementById('calcResTotal').textContent = formatSoles(res.total);
+        }
+
+        // ==========================================
+        // ACCIONES: POR COBRAR
+        // ==========================================
+        let splitTargetTouched = false;
+
+        function syncSplitTargetDefault() {
+            if (!splitTargetTouched) {
+                document.getElementById('splitTarget').value = document.getElementById('splitTotal').value;
+            }
+        }
+
+        document.getElementById('splitTarget').addEventListener('input', () => {
+            splitTargetTouched = true;
+        });
+
+        function openSplitModal(editId = null) {
+            document.getElementById('splitForm').reset();
+            document.getElementById('splitEditId').value = editId || '';
+
+            if (editId) {
+                const s = appData.splits.find(x => x.id === editId);
+                if (!s) return;
+                splitTargetTouched = true;
+                document.getElementById('splitModalTitle').innerHTML = '<i class="fa-solid fa-pen text-emerald-400"></i><span>Editar Por Cobrar</span>';
+                document.getElementById('splitSubmitBtn').textContent = 'Guardar Cambios';
+                document.getElementById('splitTitle').value = s.title;
+                document.getElementById('splitTotal').value = s.totalAmount;
+                document.getElementById('splitTarget').value = s.targetAmount ?? s.totalAmount;
+                document.getElementById('splitShare').value = s.shareAmount || '';
+                document.getElementById('splitDate').value = s.date || getTodayStr();
+                document.getElementById('splitMethod').value = s.method || 'YAPE_GEN';
+            } else {
+                splitTargetTouched = false;
+                document.getElementById('splitModalTitle').innerHTML = '<i class="fa-solid fa-hand-holding-dollar text-emerald-400"></i><span>Nuevo Por Cobrar</span>';
+                document.getElementById('splitSubmitBtn').textContent = 'Guardar Por Cobrar';
+                document.getElementById('splitDate').value = getTodayStr();
+                document.getElementById('splitMethod').value = 'YAPE_GEN';
+            }
+
+            openModal('splitModal');
+        }
+
+        function handleSplitSubmit(e) {
+            e.preventDefault();
+            const editId = document.getElementById('splitEditId').value;
+            const title = document.getElementById('splitTitle').value.trim();
+            const totalAmount = parseFloat(document.getElementById('splitTotal').value);
+            const targetAmount = parseFloat(document.getElementById('splitTarget').value);
+            const shareRaw = parseFloat(document.getElementById('splitShare').value);
+            const shareAmount = isNaN(shareRaw) || shareRaw < 0 ? 0 : shareRaw;
+            const date = document.getElementById('splitDate').value;
+            const method = document.getElementById('splitMethod').value;
+
+            if (!title || isNaN(totalAmount) || totalAmount <= 0 || isNaN(targetAmount) || targetAmount <= 0) return;
+
+            if (editId) {
+                const idx = appData.splits.findIndex(x => x.id === editId);
+                if (idx === -1) return;
+                const old = appData.splits[idx];
+
+                if (CARD_KEYS.includes(old.method) && appData.cards[old.method]) {
+                    appData.cards[old.method].debt = Math.max(0, appData.cards[old.method].debt - Number(old.totalAmount));
+                }
+                if (CARD_KEYS.includes(method) && appData.cards[method]) {
+                    appData.cards[method].debt += totalAmount;
+                }
+
+                appData.splits[idx] = { ...old, title, totalAmount, targetAmount, shareAmount, date, method };
+                closeModal('splitModal');
+                saveData('Registro actualizado');
+            } else {
+                appData.splits.push({
+                    id: 'spl-' + Date.now() + '-' + Math.floor(Math.random() * 1000),
+                    title,
+                    totalAmount,
+                    targetAmount,
+                    shareAmount,
+                    method,
+                    date,
+                    createdAt: Date.now(),
+                    repayments: []
+                });
+
+                if (CARD_KEYS.includes(method) && appData.cards[method]) {
+                    appData.cards[method].debt += totalAmount;
+                }
+
+                closeModal('splitModal');
+                saveData('Por Cobrar registrado');
+            }
+        }
+
+        function promptDeleteSplit(id) {
+            const s = appData.splits.find(x => x.id === id);
+            if (!s) return;
+            openConfirmModal(
+                '¿Eliminar Por Cobrar?',
+                `Se eliminará "${s.title}" y se revertirá el desembolso inicial de ${formatSoles(s.totalAmount)} en ${METHOD_LABELS[s.method] || s.method}.`,
+                () => {
+                    if (CARD_KEYS.includes(s.method) && appData.cards[s.method]) {
+                        appData.cards[s.method].debt = Math.max(0, appData.cards[s.method].debt - Number(s.totalAmount));
+                    }
+                    appData.splits = appData.splits.filter(x => x.id !== id);
+                    saveData('Registro eliminado');
+                },
+                'Eliminar',
+                true
+            );
+        }
+
+        function openRepayModal(splitId) {
+            const s = appData.splits.find(x => x.id === splitId);
+            if (!s) return;
+            const { remaining } = getSplitTotals(s);
+            document.getElementById('repaySplitId').value = splitId;
+            document.getElementById('repayModalTitle').textContent = `Cobro: ${s.title}`;
+            document.getElementById('repayAmount').value = s.shareAmount > 0 ? Math.min(s.shareAmount, remaining) : '';
+            document.getElementById('repayPerson').value = '';
+            openModal('repayModal');
+            setTimeout(() => document.getElementById('repayPerson').focus(), 100);
+        }
+
+        function handleRepaySubmit(e) {
+            e.preventDefault();
+            const splitId = document.getElementById('repaySplitId').value;
+            const amount = parseFloat(document.getElementById('repayAmount').value);
+            const person = document.getElementById('repayPerson').value.trim();
+            const s = appData.splits.find(x => x.id === splitId);
+            if (!s || isNaN(amount) || amount <= 0) return;
+
+            if (!Array.isArray(s.repayments)) s.repayments = [];
+            s.repayments.push({
+                id: 'rep-' + Date.now() + '-' + Math.floor(Math.random() * 1000),
+                person: person || `Amigo #${s.repayments.length + 1}`,
+                amount,
+                date: getTodayStr()
+            });
+
+            closeModal('repayModal');
+            saveData(`Cobro de ${formatSoles(amount)} registrado`);
+        }
+
+        function quickAddRepayment(splitId) {
+            const s = appData.splits.find(x => x.id === splitId);
+            if (!s || !s.shareAmount) return;
+            const { remaining } = getSplitTotals(s);
+            const amountToAdd = Math.min(Number(s.shareAmount), remaining);
+            if (amountToAdd <= 0) return;
+
+            if (!Array.isArray(s.repayments)) s.repayments = [];
+            s.repayments.push({
+                id: 'rep-' + Date.now() + '-' + Math.floor(Math.random() * 1000),
+                person: `Amigo #${s.repayments.length + 1}`,
+                amount: amountToAdd,
+                date: getTodayStr()
+            });
+            saveData(`+${formatSoles(amountToAdd)} cobrado`);
+        }
+
+        function deleteRepayment(splitId, repId) {
+            const s = appData.splits.find(x => x.id === splitId);
+            if (!s || !Array.isArray(s.repayments)) return;
+            s.repayments = s.repayments.filter(r => r.id !== repId);
+            saveData('Abono retirado');
+        }
+
+        // ==========================================
+        // CONFIGURACIÓN, RESPALDOS JSON Y LIMPIEZA
+        // ==========================================
+        function openSettingsModal() {
+            document.getElementById('setLimitGen').value = appData.limits.yapeGen;
+            document.getElementById('setLimitPas').value = appData.limits.yapePas;
+            openModal('settingsModal');
+        }
+
+        function handleAllLimitsSubmit(e) {
+            e.preventDefault();
+            const g = parseFloat(document.getElementById('setLimitGen').value);
+            const p = parseFloat(document.getElementById('setLimitPas').value);
+            if (isNaN(g) || g <= 0 || isNaN(p) || p <= 0) return;
+            appData.limits.yapeGen = g;
+            appData.limits.yapePas = p;
+            closeModal('settingsModal');
+            saveData('Límites de Yape actualizados');
+        }
+
+        function exportBackupJSON() {
+            try {
+                const jsonStr = JSON.stringify(appData, null, 2);
+                const blob = new Blob([jsonStr], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `mis_finanzas_respaldo_${getTodayStr()}.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                showToast('Respaldo JSON descargado');
+            } catch (err) {
+                showToast('Error al exportar respaldo', 'error');
+            }
+        }
+
+        function copyBackupJSON() {
+            try {
+                const ta = document.createElement('textarea');
+                ta.value = JSON.stringify(appData, null, 2);
+                ta.style.position = 'fixed';
+                ta.style.opacity = '0';
+                document.body.appendChild(ta);
+                ta.select();
+                document.execCommand('copy');
+                document.body.removeChild(ta);
+                showToast('Respaldo copiado al portapapeles');
+            } catch (err) {
+                showToast('No se pudo copiar el respaldo', 'error');
+            }
+        }
+
+        function importBackupJSON(event) {
+            const file = event.target.files && event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const parsed = JSON.parse(e.target.result);
+                    appData = mergeAppData(parsed);
+                    closeModal('settingsModal');
+                    saveData('Respaldo importado con éxito');
+                } catch (err) {
+                    showToast('Archivo JSON inválido', 'error');
+                }
+            };
+            reader.readAsText(file);
+            event.target.value = '';
+        }
+
+        function promptStartFromZero() {
+            openConfirmModal(
+                '¿Empezar en cero?',
+                'Se borrarán los gastos de ejemplo, los registros de "Por Cobrar" y se pondrán en S/ 0.00 las deudas de tarjetas para que ingreses tus montos reales. Tus límites de Yape se mantienen.',
+                () => {
+                    appData.expenses = [];
+                    appData.splits = [];
+                    appData.cycleResetTs = Date.now();
+                    CARD_KEYS.forEach(k => {
+                        appData.cards[k].debt = 0;
+                        appData.cards[k].initialDebt = 0;
+                    });
+                    closeModal('settingsModal');
+                    saveData('Todo limpio para empezar');
+                },
+                'Sí, limpiar todo',
+                true
+            );
+        }
+
+        function setSyncBadge(mode, detail) {
+            const dot = document.getElementById('syncDot');
+            const label = document.getElementById('syncLabel');
+            const sIcon = document.getElementById('settingsSyncIcon');
+            const sDetail = document.getElementById('settingsSyncDetail');
+            const sPill = document.getElementById('settingsSyncPill');
+
+            if (mode === 'cloud') {
+                dot.className = 'w-1.5 h-1.5 rounded-full bg-emerald-400';
+                label.textContent = 'Nube activa';
+                sIcon.className = 'fa-solid fa-cloud text-emerald-400';
+                sDetail.textContent = detail || 'Sincronizado automáticamente';
+                sPill.textContent = 'Nube';
+                sPill.className = 'text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400';
+            } else {
+                dot.className = 'w-1.5 h-1.5 rounded-full bg-sky-400';
+                label.textContent = 'Guardado local';
+                sIcon.className = 'fa-solid fa-hard-drive text-sky-400';
+                sDetail.textContent = detail || 'Guardado en este dispositivo';
+                sPill.textContent = 'Local';
+                sPill.className = 'text-[10px] font-bold px-2 py-0.5 rounded-full bg-sky-500/15 text-sky-400';
+            }
+        }
+
+        // Inicialización inmediata
+        loadLocalFallback();
+        renderAll();
+        runInlineSipCalc();
+    </script>
+
+    <!-- ================================================== -->
+    <!-- SINCRONIZACIÓN EN LA NUBE (FIREBASE CON FALLBACK)  -->
+    <!-- ================================================== -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        if (firebaseConfig) {
+            const app = initializeApp(firebaseConfig);
+            const auth = getAuth(app);
+            const db = getFirestore(app);
+            let currentUser = null;
+
+            async function initCloudSync() {
+                try {
+                    if (initialAuthToken) {
+                        await signInWithCustomToken(auth, initialAuthToken);
+                    } else {
+                        await signInAnonymously(auth);
+                    }
+                    currentUser = auth.currentUser;
+                    if (!currentUser) return;
+
+                    const docRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'finanzas', 'estado_actual');
+
+                    onSnapshot(
+                        docRef,
+                        (snap) => {
+                            setSyncBadge('cloud', 'Sincronizado automáticamente');
+                            if (snap.exists()) {
+                                appData = mergeAppData(snap.data());
+                                renderAll();
+                            }
+                        },
+                        (error) => {
+                            console.error('Error de lectura en la nube:', error);
+                            setSyncBadge('local', 'Guardado local activo');
+                        }
+                    );
+
+                    window.syncToCloud = async (dataToSave) => {
+                        if (!currentUser) return;
+                        try {
+                            await setDoc(docRef, dataToSave, { merge: true });
+                        } catch (err) {
+                            console.error('Error al guardar en la nube:', err);
+                        }
+                    };
+                } catch (err) {
+                    console.error('Error al iniciar sesión:', err);
+                    setSyncBadge('local', 'Guardado local activo');
+                }
+            }
+
+            initCloudSync();
+        } else {
+            setSyncBadge('local', 'Listo para usar en tu navegador o GitHub Pages');
+        }
+    </script>
+</body>
+</html>
